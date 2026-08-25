@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AtmosOptima - Global Air Quality Intelligence & Optimal Siting Platform</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              500: '#10b981',
+              600: '#059669',
+              900: '#064e3b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-[#080c15] text-slate-100 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="sticky top-0 z-40 bg-[#0c121e]/90 backdrop-blur-md border-b border-slate-800/80 px-4 lg:px-8 py-3 transition">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3 w-full md:w-auto justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-emerald-950/50">
+            <span class="text-white text-lg font-black">🍃</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="font-display font-extrabold text-lg tracking-tight text-white">Atmos<span class="text-emerald-400">Optima</span></span>
+              <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">v2.4 Live</span>
+            </div>
+            <p class="text-[10px] text-slate-400 font-medium">Urban Air Quality Intelligence & Siting Platform</p>
+          </div>
+        </div>
+
+        <!-- Mode Toggle Mobile -->
+        <div class="md:hidden flex bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+          <button id="btnModeCitizenMob" class="px-2.5 py-1 text-xs rounded-lg font-semibold bg-emerald-600 text-white">Citizen</button>
+          <button id="btnModeExpertMob" class="px-2.5 py-1 text-xs rounded-lg font-semibold text-slate-400">Planner</button>
+        </div>
+      </div>
+
+      <!-- Center: Universal City Selector & Search -->
+      <div class="flex items-center gap-2 w-full md:w-auto max-w-md flex-1 justify-center">
+        <div class="relative w-full max-w-xs">
+          <select id="citySelect" class="w-full pl-3 pr-8 py-1.5 text-xs bg-slate-900/90 text-slate-200 border border-slate-700/80 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer appearance-none">
+            <!-- Populated dynamically with 16 global cities -->
+          </select>
+          <div class="absolute right-2.5 top-2.5 pointer-events-none text-slate-400 text-xs">▼</div>
+        </div>
+        <div class="relative hidden sm:block w-36">
+          <input 
+            type="text" 
+            id="citySearchInput" 
+            placeholder="Search city..." 
+            class="w-full px-2.5 py-1.5 text-xs bg-slate-900/90 text-slate-200 border border-slate-700/80 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none placeholder:text-slate-500"
+          />
+        </div>
+      </div>
+
+      <!-- Right: View Mode Switches & Actions -->
+      <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+        <!-- Desktop Mode Switcher -->
+        <div class="hidden md:flex bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+          <button id="btnModeCitizen" class="px-3 py-1.5 text-xs rounded-lg font-semibold bg-emerald-600 text-white shadow transition flex items-center gap-1.5">
+            <span>👥</span> Citizen Clarity
+          </button>
+          <button id="btnModeExpert" class="px-3 py-1.5 text-xs rounded-lg font-semibold text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5">
+            <span>🔬</span> Urban Planner & Siting
+          </button>
+        </div>
+
+        <!-- Action Buttons -->
+        <button id="btnOpenReportModal" class="px-3 py-1.5 text-xs font-semibold rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 transition flex items-center gap-1">
+          <span>⚠️</span> <span class="hidden sm:inline">Report Hazard</span>
+        </button>
+        
+        <button id="btnExportReport" class="px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700 transition flex items-center gap-1">
+          <span>📥</span> <span class="hidden sm:inline">Export Plan</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN APP WRAPPER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-5 space-y-6">
+
+    <!-- HERO SECTION: Real-Time AQI Dial & Overview -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      
+      <!-- AQI Dial & City Headline (5 cols) -->
+      <div class="lg:col-span-5 p-5 rounded-2xl bg-gradient-to-br from-[#0f172a] to-[#0a1120] border border-slate-800 shadow-xl flex flex-col justify-between relative overflow-hidden">
+        <div class="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-emerald-500/5 blur-3xl pointer-events-none"></div>
+
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Live Air Quality Stream
+            </span>
+            <span id="heroDominantPollutant" class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+              Dominant: PM2.5
+            </span>
+          </div>
+
+          <h2 id="cityHeroTitle" class="text-2xl sm:text-3xl font-black text-white tracking-tight mb-1">
+            Delhi, India
+          </h2>
+          <p id="heroAqiDesc" class="text-xs text-slate-300 leading-relaxed mb-4">
+            Air quality is unsatisfactory and poses significant respiratory risks.
+          </p>
+        </div>
+
+        <!-- Big AQI Meter -->
+        <div class="flex items-center gap-5 my-2">
+          <div class="relative flex items-center justify-center">
+            <div class="w-28 h-28 rounded-full border-4 border-slate-800 flex flex-col items-center justify-center bg-slate-900/90 shadow-inner">
+              <span class="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-wider">US-EPA AQI</span>
+              <span id="heroAqiNumber" class="text-4xl font-display font-black text-rose-500 leading-none my-0.5">284</span>
+              <span class="text-[9px] text-slate-500 font-mono">Index (0-500)</span>
+            </div>
+          </div>
+
+          <div class="space-y-2 flex-1">
+            <div id="heroAqiBadge" class="inline-block px-3 py-1 text-xs font-bold rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">
+              Very Unhealthy
+            </div>
+            <div class="text-[11px] text-slate-400 space-y-0.5">
+              <p>WHO Guideline: <strong class="text-rose-400">12.2x Exceeded</strong></p>
+              <p>Pollutant standard: <strong>EPA 2024 / WHO 2021</strong></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Micro-Weather Row -->
+        <div class="pt-3 mt-2 border-t border-slate-800/80 grid grid-cols-4 gap-2 text-center text-xs">
+          <div>
+            <div class="text-[10px] text-slate-500">Temp</div>
+            <div id="weatherTemp" class="font-mono font-bold text-slate-200">29°C</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-slate-500">Humidity</div>
+            <div id="weatherHumidity" class="font-mono font-bold text-slate-200">58%</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-slate-500">Wind Vector</div>
+            <div id="weatherWind" class="font-mono font-bold text-slate-200">8 km/h WNW</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-slate-500">Inversion</div>
+            <div id="weatherInversion" class="font-mono font-bold text-amber-400">High Risk</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Pollutant Concentrations Matrix (7 cols) -->
+      <div class="lg:col-span-7 flex flex-col justify-between">
+        <div class="flex items-center justify-between mb-2 px-1">
+          <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Real-Time Pollutant Concentrations vs WHO Guidelines</h3>
+          <span class="text-[10px] text-slate-500 font-mono">Calibrated CAAQMS Feeds</span>
+        </div>
+        <div id="pollutantsGridContainer" class="grid grid-cols-2 sm:grid-cols-3 gap-3 flex-1">
+          <!-- Populated dynamically (PM2.5, PM10, NO2, SO2, CO, O3) -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- GEOSPATIAL MAP COMMAND CENTER -->
+    <section class="rounded-2xl bg-[#0f172a]/95 border border-slate-800 shadow-2xl overflow-hidden">
+      <!-- Map Layer Header -->
+      <div class="p-3.5 bg-slate-900/90 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-2">
+          <span class="font-display font-bold text-sm text-slate-100 flex items-center gap-1.5">
+            <span class="text-emerald-400">🗺️</span> Geospatial Monitoring & Siting Layer
+          </span>
+          <span class="text-[10px] text-slate-400 hidden sm:inline">| Interactive Multi-Tier GIS Map</span>
+        </div>
+
+        <!-- Layer Toggles -->
+        <div class="flex items-center flex-wrap gap-3 font-medium text-[11px] text-slate-300">
+          <label class="flex items-center gap-1.5 cursor-pointer hover:text-white">
+            <input type="checkbox" id="toggleHeatmap" checked class="accent-emerald-500 rounded" />
+            <span>Pollution Heatmap</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer hover:text-white">
+            <input type="checkbox" id="toggleSensors" checked class="accent-indigo-500 rounded" />
+            <span>Active Monitors</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer hover:text-white">
+            <input type="checkbox" id="togglePlumes" checked class="accent-rose-500 rounded" />
+            <span>Industrial Plumes</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer hover:text-white">
+            <input type="checkbox" id="toggleCandidates" checked class="accent-teal-500 rounded" />
+            <span>Siting Candidates</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer hover:text-white">
+            <input type="checkbox" id="toggleRoutes" checked class="accent-amber-500 rounded" />
+            <span>Clean Routes</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Map Container -->
+      <div id="mapContainer" class="w-full h-[520px] relative z-10"></div>
+    </section>
+
+    <!-- SECTION 1: CITIZEN CLARITY MODE -->
+    <div id="citizenViewSection" class="space-y-6">
+      
+      <!-- Health Advisories & Clean Route Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Advisories (7 cols) -->
+        <div class="lg:col-span-7" id="citizenAdvisoriesContainer">
+          <!-- Populated by citizenView.js -->
+        </div>
+
+        <!-- Clean Route Navigator (5 cols) -->
+        <div class="lg:col-span-5" id="cleanRouteContainer">
+          <!-- Populated by citizenView.js -->
+        </div>
+      </div>
+
+      <!-- 24-Hour Timeline & 7-Day Forecast Charts -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        
+        <!-- 24-Hour Curve -->
+        <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl flex flex-col">
+          <div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-2">
+            <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wide flex items-center gap-2">
+              <span class="text-amber-400">📈</span> 24-Hour Diurnal Pollution Curve
+            </h3>
+            <span class="text-[10px] text-slate-400 font-mono">Hourly AQI & PM2.5</span>
+          </div>
+          <div class="h-64 w-full">
+            <canvas id="hourlyChart"></canvas>
+          </div>
+        </div>
+
+        <!-- 7-Day Forecast -->
+        <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl flex flex-col">
+          <div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-2">
+            <h3 class="text-xs font-bold text-slate-200 uppercase tracking-wide flex items-center gap-2">
+              <span class="text-emerald-400">📅</span> 7-Day Predictive Air Quality Outlook
+            </h3>
+            <span class="text-[10px] text-slate-400 font-mono">AI Weather Dispersion Model</span>
+          </div>
+          <div class="h-64 w-full">
+            <canvas id="forecastChart"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- SECTION 2: URBAN PLANNER & POLICY SANDBOX MODE -->
+    <div id="expertViewSection" class="space-y-6 hidden">
+      
+      <!-- Sensor Siting Optimizer (MCLP Solver) -->
+      <div id="sensorOptimizerContainer">
+        <!-- Populated by sensorOptimizerView.js -->
+      </div>
+
+      <!-- Abatement Sandbox & Policy ROI -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        
+        <!-- Abatement Controls (8 cols) -->
+        <div class="lg:col-span-8" id="abatementPlannerContainer">
+          <!-- Populated by abatementView.js -->
+        </div>
+
+        <!-- Abatement Comparison Bar Chart (4 cols) -->
+        <div class="lg:col-span-4 p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl flex flex-col justify-between">
+          <div class="border-b border-slate-800 pb-2 mb-3">
+            <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wide flex items-center gap-1.5">
+              <span>📊</span> Clean Air Delta Comparison
+            </h4>
+            <p class="text-[10px] text-slate-400">Status Quo vs Policy Implementation</p>
+          </div>
+          <div class="h-64 w-full">
+            <canvas id="abatementComparisonChart"></canvas>
+          </div>
+          <div class="text-[10px] text-slate-400 text-center pt-2 border-t border-slate-800/80 font-mono">
+            Powered by Multi-Attribute Utility Optimization
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Source Apportionment & Industrial Registry -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        
+        <!-- Source Breakdown Doughnut -->
+        <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+            <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wide flex items-center gap-2">
+              <span>🔬</span> Source Fingerprinting & Apportionment
+            </h4>
+            <span class="text-[10px] text-slate-400 font-mono">Chemical Speciation Analysis</span>
+          </div>
+          <div class="h-64 w-full">
+            <canvas id="sourcesChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Methodology & Standards -->
+        <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl flex flex-col justify-between">
+          <div class="border-b border-slate-800 pb-2 mb-3">
+            <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wide flex items-center gap-2">
+              <span>📐</span> Mathematical Framework & Methodology
+            </h4>
+            <p class="text-[10px] text-slate-400">Optimization formulation & dispersion mechanics</p>
+          </div>
+          <div class="space-y-3 text-xs text-slate-300 leading-relaxed">
+            <div class="p-3 rounded-xl bg-slate-800/40 border border-slate-800">
+              <strong class="text-emerald-400 font-mono block mb-0.5">1. Maximal Coverage Location Problem (MCLP)</strong>
+              <span>Maximizes covered population exposure \(\sum_{i} w_i y_i\) subject to budget constraint \(\sum_j c_j x_j \le B\) and radius \(d_{ij} \le R\).</span>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-800/40 border border-slate-800">
+              <strong class="text-teal-400 font-mono block mb-0.5">2. Gaussian Plume Dispersion</strong>
+              <span>Predicts downwind concentration \(C(x,y) = \frac{Q}{2\pi u \sigma_y \sigma_z} \exp\left(-\frac{y^2}{2\sigma_y^2}\right)\) across urban micro-climates.</span>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-800/40 border border-slate-800">
+              <strong class="text-indigo-400 font-mono block mb-0.5">3. Health Burden & BCR Valuation</strong>
+              <span>Computes avoided hospitalizations and healthcare expenditure via standard epidemiological relative risk models (RR = 1.08 per 10 µg/m³ PM2.5).</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- CITIZEN HAZARD REPORTING MODAL -->
+  <div id="reportModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative animate-fade-in">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+          <span>⚠️</span> Report Local Smoke / Pollution Hazard
+        </h3>
+        <button id="btnCloseReportModal" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+      </div>
+
+      <form id="citizenReportForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Hazard Category</label>
+          <select id="hazardTypeSelect" class="w-full text-xs bg-slate-800 border border-slate-700 text-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <option value="Open Waste / Plastic Burning">🔥 Open Waste or Garbage Burning</option>
+            <option value="Construction Dust Violation">🏗️ Uncovered Construction Dust / Demolition</option>
+            <option value="Visible Heavy Diesel Smoke">🚛 Heavy Diesel Smoke / Idling Exhaust</option>
+            <option value="Industrial Chimney Flare">🏭 Unfiltered Industrial Chimney Plume</option>
+            <option value="Agricultural Biomass Smolder">🌾 Agricultural Stubble Burning</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Description & Landmark</label>
+          <textarea 
+            id="hazardDescInput" 
+            rows="3" 
+            placeholder="Describe location, intensity, and odor (e.g. Thick black smoke seen near ring road junction)..."
+            class="w-full text-xs bg-slate-800 border border-slate-700 text-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none placeholder:text-slate-500"
+            required
+          ></textarea>
+        </div>
+
+        <div class="p-3 rounded-xl bg-emerald-950/20 border border-emerald-800/40 text-[11px] text-slate-300 flex items-center gap-2">
+          <span>📍</span>
+          <span>Your report will be pinned to the city map and weighted in future IoT sensor siting rounds.</span>
+        </div>
+
+        <button 
+          type="submit" 
+          class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-950/50 transition active:scale-[0.99]"
+        >
+          Submit Citizen Hazard Report
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="mt-12 bg-[#060a12] border-t border-slate-900 py-6 px-4 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-slate-400">AtmosOptima</span>
+        <span>•</span>
+        <span>Empowering Citizens & Planners with Clean Air Science</span>
+      </div>
+      <div class="text-[11px] space-x-4">
+        <span>Standards: US EPA NAAQS</span>
+        <span>WHO 2021 Benchmarks</span>
+        <span>MCLP Sensor Optimization</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- App Entry Script -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
