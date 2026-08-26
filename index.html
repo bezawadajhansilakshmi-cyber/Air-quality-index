@@ -31,14 +31,116 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Leaflet CSS & JS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Custom Stylesheet -->
-  <link rel="stylesheet" href="styles.css" />
+  <!-- Embedded Standalone Styles -->
+  <style>
+    :root {
+      --font-sans: 'Plus Jakarta Sans', sans-serif;
+      --font-display: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: #080c15;
+      color: #f1f5f9;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, .font-display {
+      font-family: var(--font-display);
+    }
+
+    .font-mono {
+      font-family: var(--font-mono);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* Custom Leaflet Dark Mode & Popup Styling */
+    .leaflet-container {
+      background-color: #0b1120 !important;
+      font-family: var(--font-sans) !important;
+    }
+
+    .leaflet-popup-content-wrapper {
+      background: rgba(15, 23, 42, 0.95) !important;
+      backdrop-filter: blur(12px) !important;
+      border: 1px solid rgba(51, 65, 85, 0.8) !important;
+      border-radius: 14px !important;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
+      color: #f1f5f9 !important;
+      padding: 0 !important;
+    }
+
+    .leaflet-popup-content {
+      margin: 12px 14px !important;
+      line-height: 1.4 !important;
+    }
+
+    .leaflet-popup-tip {
+      background: rgba(15, 23, 42, 0.95) !important;
+      border: 1px solid rgba(51, 65, 85, 0.8) !important;
+    }
+
+    .leaflet-control-zoom a {
+      background-color: #0f172a !important;
+      color: #94a3b8 !important;
+      border: 1px solid #334155 !important;
+    }
+
+    .leaflet-control-zoom a:hover {
+      background-color: #1e293b !important;
+      color: #f8fafc !important;
+    }
+
+    /* Marker Alignments */
+    .custom-sensor-marker, .candidate-marker, .point-source-marker, .incident-marker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Range slider custom styling */
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 16px;
+      width: 16px;
+      border-radius: 50%;
+      background: #10b981;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+      border: 2px solid #ffffff;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
 </head>
 <body class="bg-[#080c15] text-slate-100 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
 
@@ -243,12 +345,12 @@
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
         <!-- Advisories (7 cols) -->
         <div class="lg:col-span-7" id="citizenAdvisoriesContainer">
-          <!-- Populated by citizenView.js -->
+          <!-- Populated dynamically -->
         </div>
 
         <!-- Clean Route Navigator (5 cols) -->
         <div class="lg:col-span-5" id="cleanRouteContainer">
-          <!-- Populated by citizenView.js -->
+          <!-- Populated dynamically -->
         </div>
       </div>
 
@@ -290,7 +392,7 @@
       
       <!-- Sensor Siting Optimizer (MCLP Solver) -->
       <div id="sensorOptimizerContainer">
-        <!-- Populated by sensorOptimizerView.js -->
+        <!-- Populated dynamically -->
       </div>
 
       <!-- Abatement Sandbox & Policy ROI -->
@@ -298,7 +400,7 @@
         
         <!-- Abatement Controls (8 cols) -->
         <div class="lg:col-span-8" id="abatementPlannerContainer">
-          <!-- Populated by abatementView.js -->
+          <!-- Populated dynamically -->
         </div>
 
         <!-- Abatement Comparison Bar Chart (4 cols) -->
@@ -429,7 +531,1264 @@
     </div>
   </footer>
 
-  <!-- App Entry Script -->
-  <script type="module" src="js/app.js"></script>
+  <!-- Embedded Standalone Engine -->
+  <script>
+    /* ==========================================================================
+       1. MULTI-CITY ENVIRONMENTAL & SITING DATASET (16 Megacities)
+       ========================================================================== */
+    const AQI_BREAKPOINTS = [
+      { min: 0, max: 50, label: "Good", color: "#10b981", bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/30", description: "Air quality is satisfactory, and air pollution poses little or no risk." },
+      { min: 51, max: 100, label: "Moderate", color: "#facc15", bg: "bg-yellow-500/10", text: "text-yellow-400", border: "border-yellow-500/30", description: "Air quality is acceptable; however, sensitive people may experience minor irritation." },
+      { min: 101, max: 150, label: "Unhealthy for Sensitive Groups", color: "#f97316", bg: "bg-orange-500/10", text: "text-orange-400", border: "border-orange-500/30", description: "Members of sensitive groups (children, seniors, asthmatics) may experience health effects." },
+      { min: 151, max: 200, label: "Unhealthy", color: "#ef4444", bg: "bg-rose-500/10", text: "text-rose-400", border: "border-rose-500/30", description: "Some members of the general public may experience health effects; sensitive members more seriously." },
+      { min: 201, max: 300, label: "Very Unhealthy", color: "#a855f7", bg: "bg-purple-500/10", text: "text-purple-400", border: "border-purple-500/30", description: "Health alert: The risk of health effects is increased for everyone in the city." },
+      { min: 301, max: 500, label: "Hazardous", color: "#881337", bg: "bg-red-950/40", text: "text-rose-300", border: "border-rose-800", description: "Health warning of emergency conditions: Everyone is likely to be affected." }
+    ];
+
+    const WHO_GUIDELINES = {
+      pm25: { guideline: 5.0, unit: "µg/m³", description: "Fine particulate matter (≤ 2.5 µm)" },
+      pm10: { guideline: 15.0, unit: "µg/m³", description: "Coarse particulate matter (≤ 10 µm)" },
+      no2: { guideline: 10.0, unit: "µg/m³", description: "Nitrogen Dioxide" },
+      so2: { guideline: 40.0, unit: "µg/m³", description: "Sulfur Dioxide (24-hr)" },
+      co: { guideline: 4.0, unit: "mg/m³", description: "Carbon Monoxide (24-hr)" },
+      o3: { guideline: 60.0, unit: "µg/m³", description: "Peak season 8-hr Ozone" }
+    };
+
+    const CITIES_DATA = {
+      delhi: {
+        id: "delhi", name: "Delhi", country: "India", region: "South Asia", coords: [28.6139, 77.2090], zoom: 11, aqi: 284, dominantPollutant: "PM2.5", population: 33000000,
+        healthBaseline: { annualRespiratoryVisits: 240000, annualHealthcareCostMillionUSD: 410, vulnerablePopulationPct: 28 },
+        pollutants: { pm25: 182.4, pm10: 312.0, no2: 68.2, so2: 24.5, co: 2.8, o3: 42.1 },
+        weather: { temp: 29, humidity: 58, windSpeed: 8.5, windDeg: 290, windDirectionText: "WNW", condition: "Hazy & Stagnant", inversionRisk: "High" },
+        sources: [
+          { id: "traffic", name: "Vehicular & Diesel Transport", percentage: 36, color: "#f97316" },
+          { id: "biomass", name: "Agricultural Biomass & Waste Burning", percentage: 24, color: "#ef4444" },
+          { id: "industry", name: "Heavy Industry & Thermal Kilns", percentage: 18, color: "#8b5cf6" },
+          { id: "dust", name: "Construction & Crustal Road Dust", percentage: 15, color: "#eab308" },
+          { id: "residential", name: "Residential Solid Fuel & Cooking", percentage: 7, color: "#06b6d4" }
+        ],
+        existingSensors: [
+          { id: "DEL-REF-01", name: "Anand Vihar CAAQMS", type: "reference", lat: 28.6469, lng: 77.3160, aqi: 342, status: "active", uptime: "99.4%", coverageRadiusKm: 4.5 },
+          { id: "DEL-REF-02", name: "RK Puram Monitoring Station", type: "reference", lat: 28.5638, lng: 77.1865, aqi: 260, status: "active", uptime: "98.8%", coverageRadiusKm: 4.0 },
+          { id: "DEL-REF-03", name: "Punjabi Bagh Station", type: "reference", lat: 28.6683, lng: 77.1167, aqi: 295, status: "active", uptime: "99.1%", coverageRadiusKm: 4.0 },
+          { id: "DEL-IOT-01", name: "Nehru Place Tech IoT Hub", type: "iot", lat: 28.5494, lng: 77.2530, aqi: 245, status: "active", uptime: "96.2%", coverageRadiusKm: 1.5 }
+        ],
+        pointSources: [
+          { id: "PS-DEL-01", name: "Okhla Industrial Phase II", type: "Industrial Estate", lat: 28.5280, lng: 77.2750, emissionRate: "High", dominantPollutant: "PM2.5, SO2" },
+          { id: "PS-DEL-02", name: "Mayapuri Metal Fabrication Cluster", type: "Smelting & Scrap", lat: 28.6390, lng: 77.1290, emissionRate: "High", dominantPollutant: "PM10, Metals" },
+          { id: "PS-DEL-03", name: "Ghazipur Landfill & Processing Area", type: "Waste/Methane Plume", lat: 28.6250, lng: 77.3290, emissionRate: "Severe", dominantPollutant: "Methane, VOC" }
+        ],
+        candidateGrid: [
+          { id: "CAND-DEL-01", name: "Dwarka Sector 21 Transit Interchange", lat: 28.5520, lng: 77.0580, popCount: 185000, vulnerabilityScore: 88, estimatedCostUSD: 14000, currentCoverage: "Poor" },
+          { id: "CAND-DEL-02", name: "Wazirpur Heavy Freight Junction", lat: 28.6980, lng: 77.1650, popCount: 210000, vulnerabilityScore: 94, estimatedCostUSD: 16000, currentCoverage: "Gapped" },
+          { id: "CAND-DEL-03", name: "Saket Hospital & Education Hub", lat: 28.5240, lng: 77.2100, popCount: 140000, vulnerabilityScore: 96, estimatedCostUSD: 12000, currentCoverage: "Moderate" },
+          { id: "CAND-DEL-04", name: "Shahdara East Dense Corridor", lat: 28.6720, lng: 77.2910, popCount: 290000, vulnerabilityScore: 92, estimatedCostUSD: 15000, currentCoverage: "Zero" }
+        ],
+        cleanRoutes: [
+          {
+            id: "CR-DEL-01", title: "South Delhi to Central Vista", start: [28.5450, 77.2100], end: [28.6145, 77.2185], startName: "IIT Hauz Khas", endName: "Central Secretariat",
+            standardPath: [[28.5450, 77.2100], [28.5680, 77.2160], [28.5900, 77.2250], [28.6145, 77.2185]],
+            cleanPath: [[28.5450, 77.2100], [28.5580, 77.1950], [28.5850, 77.1850], [28.6050, 77.1980], [28.6145, 77.2185]],
+            standardExposureAQI: 275, cleanExposureAQI: 168, exposureReductionPct: 39, distanceDeltaKm: "+1.2 km (via Shanti Path & Green Belt)"
+          }
+        ],
+        hourlyHistory: [
+          { hour: "00:00", aqi: 310, pm25: 202, no2: 74 }, { hour: "04:00", aqi: 340, pm25: 232, no2: 82 }, { hour: "08:00", aqi: 330, pm25: 220, no2: 98 },
+          { hour: "12:00", aqi: 250, pm25: 154, no2: 62 }, { hour: "16:00", aqi: 260, pm25: 162, no2: 68 }, { hour: "20:00", aqi: 315, pm25: 210, no2: 92 }
+        ],
+        forecast7Day: [
+          { day: "Today", aqi: 284, category: "Very Unhealthy", wind: "8 km/h WNW", temp: "29°C" }, { day: "Tomorrow", aqi: 295, category: "Very Unhealthy", wind: "6 km/h NW", temp: "30°C" },
+          { day: "Day 3", aqi: 310, category: "Hazardous", wind: "5 km/h N", temp: "31°C" }, { day: "Day 4", aqi: 260, category: "Very Unhealthy", wind: "14 km/h E", temp: "28°C" },
+          { day: "Day 5", aqi: 220, category: "Very Unhealthy", wind: "16 km/h ESE", temp: "27°C" }, { day: "Day 6", aqi: 190, category: "Unhealthy", wind: "12 km/h SE", temp: "28°C" },
+          { day: "Day 7", aqi: 175, category: "Unhealthy", wind: "10 km/h S", temp: "29°C" }
+        ]
+      },
+
+      beijing: {
+        id: "beijing", name: "Beijing", country: "China", region: "East Asia", coords: [39.9042, 116.4074], zoom: 11, aqi: 142, dominantPollutant: "PM2.5", population: 21890000,
+        healthBaseline: { annualRespiratoryVisits: 115000, annualHealthcareCostMillionUSD: 230, vulnerablePopulationPct: 22 },
+        pollutants: { pm25: 52.8, pm10: 98.4, no2: 44.1, so2: 12.0, co: 1.2, o3: 65.4 },
+        weather: { temp: 18, humidity: 42, windSpeed: 14.2, windDeg: 45, windDirectionText: "NE", condition: "Partly Cloudy", inversionRisk: "Moderate" },
+        sources: [
+          { id: "industry", name: "Surrounding Heavy Industry & Steel", percentage: 34, color: "#8b5cf6" },
+          { id: "traffic", name: "Urban Motor Vehicles", percentage: 28, color: "#f97316" },
+          { id: "dust", name: "Regional Sand & Crustal Dust", percentage: 20, color: "#eab308" },
+          { id: "heating", name: "District Heating & Residential", percentage: 12, color: "#06b6d4" },
+          { id: "biomass", name: "Regional Biomass", percentage: 6, color: "#ef4444" }
+        ],
+        existingSensors: [
+          { id: "PEK-REF-01", name: "Dongsi Environmental Center", type: "reference", lat: 39.9300, lng: 116.4170, aqi: 145, status: "active", uptime: "99.8%", coverageRadiusKm: 5.0 },
+          { id: "PEK-REF-02", name: "Tiantan Park Station", type: "reference", lat: 39.8800, lng: 116.4080, aqi: 125, status: "active", uptime: "99.9%", coverageRadiusKm: 4.5 }
+        ],
+        pointSources: [
+          { id: "PS-PEK-01", name: "Yanshan Petrochemical Base", type: "Refinery", lat: 39.7300, lng: 115.9600, emissionRate: "Severe", dominantPollutant: "VOC, SO2" }
+        ],
+        candidateGrid: [
+          { id: "CAND-PEK-01", name: "Daxing Aerotropolis Gateway", lat: 39.5100, lng: 116.4100, popCount: 160000, vulnerabilityScore: 82, estimatedCostUSD: 15000, currentCoverage: "Poor" }
+        ],
+        cleanRoutes: [
+          {
+            id: "CR-PEK-01", title: "Chaoyang CBD to Park Green Corridor", start: [39.9100, 116.4600], end: [39.9400, 116.4850], startName: "Guomao CBD", endName: "Chaoyang Park North",
+            standardPath: [[39.9100, 116.4600], [39.9250, 116.4620], [39.9400, 116.4850]], cleanPath: [[39.9100, 116.4600], [39.9180, 116.4800], [39.9320, 116.4880], [39.9400, 116.4850]],
+            standardExposureAQI: 158, cleanExposureAQI: 104, exposureReductionPct: 34, distanceDeltaKm: "+0.8 km (via canal trail)"
+          }
+        ],
+        hourlyHistory: [{ hour: "00:00", aqi: 160, pm25: 68, no2: 52 }, { hour: "08:00", aqi: 155, pm25: 60, no2: 64 }, { hour: "16:00", aqi: 125, pm25: 42, no2: 36 }],
+        forecast7Day: [{ day: "Today", aqi: 142, category: "Unhealthy for Sensitive", wind: "14 km/h NE", temp: "18°C" }, { day: "Tomorrow", aqi: 120, category: "Unhealthy for Sensitive", wind: "18 km/h N", temp: "16°C" }, { day: "Day 3", aqi: 85, category: "Moderate", wind: "22 km/h NW", temp: "15°C" }]
+      },
+
+      london: {
+        id: "london", name: "London", country: "United Kingdom", region: "Europe", coords: [51.5074, -0.1278], zoom: 11, aqi: 48, dominantPollutant: "NO2", population: 8982000,
+        healthBaseline: { annualRespiratoryVisits: 38000, annualHealthcareCostMillionUSD: 95, vulnerablePopulationPct: 18 },
+        pollutants: { pm25: 10.4, pm10: 18.2, no2: 36.8, so2: 3.1, co: 0.4, o3: 48.0 },
+        weather: { temp: 14, humidity: 78, windSpeed: 18.0, windDeg: 240, windDirectionText: "WSW", condition: "Breezy & Light Rain", inversionRisk: "Low" },
+        sources: [
+          { id: "traffic", name: "Road Transport & Urban Fleets", percentage: 48, color: "#f97316" },
+          { id: "heating", name: "Domestic Wood & Gas Heating", percentage: 22, color: "#06b6d4" },
+          { id: "aviation", name: "Aviation & Heathrow Corridor", percentage: 14, color: "#8b5cf6" },
+          { id: "industry", name: "Thames Industrial & Construction", percentage: 11, color: "#eab308" }
+        ],
+        existingSensors: [
+          { id: "LON-REF-01", name: "Marylebone Road Super-Site", type: "reference", lat: 51.5225, lng: -0.1546, aqi: 62, status: "active", uptime: "99.9%", coverageRadiusKm: 3.0 }
+        ],
+        pointSources: [{ id: "PS-LON-01", name: "Heathrow Transit Hub", type: "Aviation", lat: 51.4700, lng: -0.4543, emissionRate: "High", dominantPollutant: "NO2" }],
+        candidateGrid: [{ id: "CAND-LON-01", name: "Lewisham South Circular", lat: 51.4620, lng: -0.0150, popCount: 92000, vulnerabilityScore: 85, estimatedCostUSD: 11000, currentCoverage: "Gapped" }],
+        cleanRoutes: [
+          {
+            id: "CR-LON-01", title: "King's Cross to Covent Garden", start: [51.5300, -0.1240], end: [51.5120, -0.1220], startName: "King's Cross", endName: "Covent Garden",
+            standardPath: [[51.5300, -0.1240], [51.5200, -0.1230], [51.5120, -0.1220]], cleanPath: [[51.5300, -0.1240], [51.5260, -0.1180], [51.5180, -0.1160], [51.5120, -0.1220]],
+            standardExposureAQI: 56, cleanExposureAQI: 35, exposureReductionPct: 38, distanceDeltaKm: "+0.4 km (via Russell Square)"
+          }
+        ],
+        hourlyHistory: [{ hour: "00:00", aqi: 35, pm25: 7, no2: 24 }, { hour: "08:00", aqi: 58, pm25: 14, no2: 48 }, { hour: "16:00", aqi: 52, pm25: 12, no2: 42 }],
+        forecast7Day: [{ day: "Today", aqi: 48, category: "Good", wind: "18 km/h WSW", temp: "14°C" }, { day: "Tomorrow", aqi: 42, category: "Good", wind: "22 km/h SW", temp: "15°C" }]
+      },
+
+      losangeles: {
+        id: "losangeles", name: "Los Angeles", country: "United States", region: "North America", coords: [34.0522, -118.2437], zoom: 11, aqi: 118, dominantPollutant: "Ozone", population: 3898000,
+        healthBaseline: { annualRespiratoryVisits: 54000, annualHealthcareCostMillionUSD: 140, vulnerablePopulationPct: 20 },
+        pollutants: { pm25: 22.5, pm10: 44.0, no2: 38.0, so2: 4.2, co: 1.6, o3: 88.4 },
+        weather: { temp: 26, humidity: 48, windSpeed: 9.8, windDeg: 210, windDirectionText: "SSW", condition: "Sunny & Smog", inversionRisk: "High" },
+        sources: [
+          { id: "traffic", name: "Freeway Corridors & Fleets", percentage: 46, color: "#f97316" },
+          { id: "ports", name: "Port of LA & Long Beach Marine", percentage: 24, color: "#06b6d4" },
+          { id: "refinery", name: "Oil Refineries & Industrial", percentage: 16, color: "#8b5cf6" },
+          { id: "wildfire", name: "Wildfire & Secondary Smog", percentage: 9, color: "#ef4444" }
+        ],
+        existingSensors: [{ id: "LA-REF-01", name: "North Main Downtown", type: "reference", lat: 34.0665, lng: -118.2268, aqi: 115, status: "active", uptime: "99.8%", coverageRadiusKm: 4.8 }],
+        pointSources: [{ id: "PS-LA-01", name: "Torrance Petroleum Refinery", type: "Refinery", lat: 33.8500, lng: -118.3400, emissionRate: "Severe", dominantPollutant: "VOC, SO2" }],
+        candidateGrid: [{ id: "CAND-LA-01", name: "Boyle Heights Community Hub", lat: 34.0350, lng: -118.2050, popCount: 95000, vulnerabilityScore: 94, estimatedCostUSD: 13500, currentCoverage: "Poor" }],
+        cleanRoutes: [
+          {
+            id: "CR-LA-01", title: "Santa Monica to UCLA Campus", start: [34.0195, -118.4912], end: [34.0689, -118.4452], startName: "Santa Monica", endName: "UCLA Westwood",
+            standardPath: [[34.0195, -118.4912], [34.0350, -118.4650], [34.0689, -118.4452]], cleanPath: [[34.0195, -118.4912], [34.0450, -118.4800], [34.0600, -118.4550], [34.0689, -118.4452]],
+            standardExposureAQI: 122, cleanExposureAQI: 76, exposureReductionPct: 37, distanceDeltaKm: "+1.1 km (avoiding Wilshire Blvd)"
+          }
+        ],
+        hourlyHistory: [{ hour: "00:00", aqi: 65, pm25: 14, no2: 26 }, { hour: "08:00", aqi: 90, pm25: 18, no2: 45 }, { hour: "16:00", aqi: 145, pm25: 29, no2: 36 }],
+        forecast7Day: [{ day: "Today", aqi: 118, category: "Unhealthy for Sensitive", wind: "9 km/h SSW", temp: "26°C" }, { day: "Tomorrow", aqi: 125, category: "Unhealthy for Sensitive", wind: "8 km/h SW", temp: "27°C" }]
+      },
+
+      tokyo: {
+        id: "tokyo", name: "Tokyo", country: "Japan", region: "East Asia", coords: [35.6762, 139.6503], zoom: 11, aqi: 38, dominantPollutant: "PM2.5", population: 14040000,
+        healthBaseline: { annualRespiratoryVisits: 28000, annualHealthcareCostMillionUSD: 60, vulnerablePopulationPct: 24 },
+        pollutants: { pm25: 8.9, pm10: 15.4, no2: 22.1, so2: 2.0, co: 0.3, o3: 41.2 },
+        weather: { temp: 21, humidity: 62, windSpeed: 16.5, windDeg: 160, windDirectionText: "SSE", condition: "Clear & Breezy", inversionRisk: "Low" },
+        sources: [
+          { id: "traffic", name: "Shuto Expressway & Vehicles", percentage: 42, color: "#f97316" },
+          { id: "bay", name: "Tokyo Bay Maritime & LNG", percentage: 26, color: "#06b6d4" },
+          { id: "industry", name: "Keihin Industrial Coastal Belt", percentage: 18, color: "#8b5cf6" }
+        ],
+        existingSensors: [{ id: "TYO-REF-01", name: "Shinjuku Metropolitan", type: "reference", lat: 35.6895, lng: 139.6917, aqi: 36, status: "active", uptime: "99.9%", coverageRadiusKm: 4.5 }],
+        pointSources: [{ id: "PS-TYO-01", name: "JFE Steel Keihin Works", type: "Steel & Power", lat: 35.5100, lng: 139.7200, emissionRate: "Moderate", dominantPollutant: "PM2.5" }],
+        candidateGrid: [{ id: "CAND-TYO-01", name: "Shinagawa Shinkansen Hub", lat: 35.6280, lng: 139.7380, popCount: 175000, vulnerabilityScore: 68, estimatedCostUSD: 16000, currentCoverage: "Good" }],
+        cleanRoutes: [
+          {
+            id: "CR-TYO-01", title: "Shibuya to Yoyogi Park Promenade", start: [35.6580, 139.7016], end: [35.6710, 139.6950], startName: "Shibuya", endName: "Yoyogi Park",
+            standardPath: [[35.6580, 139.7016], [35.6650, 139.7000], [35.6710, 139.6950]], cleanPath: [[35.6580, 139.7016], [35.6630, 139.6940], [35.6710, 139.6950]],
+            standardExposureAQI: 44, cleanExposureAQI: 26, exposureReductionPct: 41, distanceDeltaKm: "+0.3 km (via promenade)"
+          }
+        ],
+        hourlyHistory: [{ hour: "00:00", aqi: 28, pm25: 6, no2: 15 }, { hour: "08:00", aqi: 38, pm25: 8, no2: 24 }, { hour: "16:00", aqi: 45, pm25: 11, no2: 28 }],
+        forecast7Day: [{ day: "Today", aqi: 38, category: "Good", wind: "16 km/h SSE", temp: "21°C" }, { day: "Tomorrow", aqi: 35, category: "Good", wind: "18 km/h S", temp: "22°C" }]
+      },
+
+      paris: {
+        id: "paris", name: "Paris", country: "France", region: "Europe", coords: [48.8566, 2.3522], zoom: 12, aqi: 54, dominantPollutant: "PM2.5", population: 2161000,
+        healthBaseline: { annualRespiratoryVisits: 19500, annualHealthcareCostMillionUSD: 52, vulnerablePopulationPct: 17 },
+        pollutants: { pm25: 13.2, pm10: 22.0, no2: 34.5, so2: 2.8, co: 0.5, o3: 52.0 },
+        weather: { temp: 16, humidity: 70, windSpeed: 11.2, windDeg: 270, windDirectionText: "W", condition: "Mild & Overcast", inversionRisk: "Moderate" },
+        sources: [
+          { id: "traffic", name: "Boulevard Périphérique & Fleets", percentage: 51, color: "#f97316" },
+          { id: "heating", name: "Residential Heating & Wood", percentage: 24, color: "#06b6d4" },
+          { id: "agriculture", name: "Regional Agricultural Ammonia", percentage: 15, color: "#10b981" }
+        ],
+        existingSensors: [{ id: "PAR-REF-01", name: "Airparif Opéra", type: "reference", lat: 48.8719, lng: 2.3316, aqi: 62, status: "active", uptime: "99.8%", coverageRadiusKm: 2.8 }],
+        pointSources: [{ id: "PS-PAR-01", name: "Périphérique Nord Interlink", type: "Highway Ring", lat: 48.8980, lng: 2.3580, emissionRate: "High", dominantPollutant: "NO2" }],
+        candidateGrid: [{ id: "CAND-PAR-01", name: "Porte de Bagnolet", lat: 48.8650, lng: 2.4180, popCount: 88000, vulnerabilityScore: 84, estimatedCostUSD: 12000, currentCoverage: "Poor" }],
+        cleanRoutes: [
+          {
+            id: "CR-PAR-01", title: "Gare de Lyon to Louvre via Seine", start: [48.8448, 2.3735], end: [48.8606, 2.3376], startName: "Gare de Lyon", endName: "Louvre",
+            standardPath: [[48.8448, 2.3735], [48.8520, 2.3550], [48.8606, 2.3376]], cleanPath: [[48.8448, 2.3735], [48.8480, 2.3650], [48.8606, 2.3376]],
+            standardExposureAQI: 65, cleanExposureAQI: 39, exposureReductionPct: 40, distanceDeltaKm: "+0.2 km (along Seine bank)"
+          }
+        ],
+        hourlyHistory: [{ hour: "00:00", aqi: 42, pm25: 9, no2: 24 }, { hour: "08:00", aqi: 68, pm25: 18, no2: 48 }, { hour: "16:00", aqi: 56, pm25: 14, no2: 38 }],
+        forecast7Day: [{ day: "Today", aqi: 54, category: "Moderate", wind: "11 km/h W", temp: "16°C" }, { day: "Tomorrow", aqi: 48, category: "Good", wind: "15 km/h WSW", temp: "17°C" }]
+      },
+
+      cairo: {
+        id: "cairo", name: "Cairo", country: "Egypt", region: "Middle East & North Africa", coords: [30.0444, 31.2357], zoom: 11, aqi: 215, dominantPollutant: "PM10", population: 22180000,
+        healthBaseline: { annualRespiratoryVisits: 190000, annualHealthcareCostMillionUSD: 290, vulnerablePopulationPct: 26 },
+        pollutants: { pm25: 115.0, pm10: 278.0, no2: 58.0, so2: 32.0, co: 2.4, o3: 56.0 },
+        weather: { temp: 34, humidity: 32, windSpeed: 12.0, windDeg: 340, windDirectionText: "NNW", condition: "Dry & Dusty", inversionRisk: "High" },
+        sources: [
+          { id: "dust", name: "Desert & Crustal Road Dust", percentage: 38, color: "#eab308" },
+          { id: "traffic", name: "Aging Vehicular Fleet", percentage: 28, color: "#f97316" },
+          { id: "industry", name: "Helwan Cement & Kilns", percentage: 22, color: "#8b5cf6" },
+          { id: "biomass", name: "Agricultural Black Cloud", percentage: 12, color: "#ef4444" }
+        ],
+        existingSensors: [{ id: "CAI-REF-01", name: "Tahrir Square Central", type: "reference", lat: 30.0444, lng: 31.2357, aqi: 228, status: "active", uptime: "98.1%", coverageRadiusKm: 4.0 }],
+        pointSources: [{ id: "PS-CAI-01", name: "Helwan Heavy Complex", type: "Cement", lat: 29.8200, lng: 31.3200, emissionRate: "Severe", dominantPollutant: "PM10" }],
+        candidateGrid: [{ id: "CAND-CAI-01", name: "Giza West Dense Node", lat: 30.0131, lng: 31.2089, popCount: 310000, vulnerabilityScore: 92, estimatedCostUSD: 14000, currentCoverage: "Poor" }],
+        cleanRoutes: [
+          {
+            id: "CR-CAI-01", title: "Zamalek to Garden City Promenade", start: [30.0600, 31.2200], end: [30.0350, 31.2300], startName: "Zamalek", endName: "Garden City",
+            standardPath: [[30.0600, 31.2200], [30.0450, 31.2350], [30.0350, 31.2300]], cleanPath: [[30.0600, 31.2200], [30.0500, 31.2230], [30.0350, 31.2300]],
+            standardExposureAQI: 235, cleanExposureAQI: 145, exposureReductionPct: 38, distanceDeltaKm: "+0.6 km (along Nile western bank)"
+          }
+        ],
+        hourlyHistory: [{ hour: "00:00", aqi: 240, pm25: 135, no2: 64 }, { hour: "08:00", aqi: 265, pm25: 155, no2: 72 }, { hour: "16:00", aqi: 215, pm25: 115, no2: 58 }],
+        forecast7Day: [{ day: "Today", aqi: 215, category: "Very Unhealthy", wind: "12 km/h NNW", temp: "34°C" }, { day: "Tomorrow", aqi: 230, category: "Very Unhealthy", wind: "10 km/h N", temp: "35°C" }]
+      },
+
+      saopaulo: {
+        id: "saopaulo", name: "São Paulo", country: "Brazil", region: "South America", coords: [-23.5505, -46.6333], zoom: 11, aqi: 92, dominantPollutant: "PM2.5", population: 12330000,
+        healthBaseline: { annualRespiratoryVisits: 65000, annualHealthcareCostMillionUSD: 110, vulnerablePopulationPct: 21 },
+        pollutants: { pm25: 19.8, pm10: 38.5, no2: 32.0, so2: 6.5, co: 1.4, o3: 62.0 },
+        weather: { temp: 23, humidity: 68, windSpeed: 13.5, windDeg: 120, windDirectionText: "ESE", condition: "Partly Cloudy", inversionRisk: "Moderate" },
+        sources: [
+          { id: "traffic", name: "Flex-Fuel Fleet & Diesels", percentage: 58, color: "#f97316" },
+          { id: "industry", name: "ABC Industrial Basin", percentage: 22, color: "#8b5cf6" },
+          { id: "biomass", name: "Sugarcane Smoke", percentage: 12, color: "#ef4444" }
+        ],
+        existingSensors: [{ id: "SP-REF-01", name: "Parque D. Pedro II", type: "reference", lat: -23.5448, lng: -46.6276, aqi: 98, status: "active", uptime: "99.2%", coverageRadiusKm: 4.2 }],
+        pointSources: [{ id: "PS-SP-01", name: "Capuava Petrochem", type: "Petrochemical", lat: -23.6300, lng: -46.4700, emissionRate: "Severe", dominantPollutant: "VOC, SO2" }],
+        candidateGrid: [{ id: "CAND-SP-01", name: "Marginal Pinheiros Node", lat: -23.5900, lng: -46.6900, popCount: 165000, vulnerabilityScore: 86, estimatedCostUSD: 12500, currentCoverage: "Poor" }],
+        cleanRoutes: [
+          {
+            id: "CR-SP-01", title: "Paulista to Ibirapuera Loop", start: [-23.5615, -46.6559], end: [-23.5874, -46.6576], startName: "MASP Paulista", endName: "Ibirapuera",
+            standardPath: [[-23.5615, -46.6559], [-23.5750, -46.6560], [-23.5874, -46.6576]], cleanPath: [[-23.5615, -46.6559], [-23.5700, -46.6620], [-23.5874, -46.6576]],
+            standardExposureAQI: 105, cleanExposureAQI: 62, exposureReductionPct: 41, distanceDeltaKm: "+0.5 km (via Jardins green streets)"
+          }
+        ],
+        hourlyHistory: [{ hour: "00:00", aqi: 70, pm25: 14, no2: 24 }, { hour: "08:00", aqi: 115, pm25: 26, no2: 44 }, { hour: "16:00", aqi: 96, pm25: 21, no2: 35 }],
+        forecast7Day: [{ day: "Today", aqi: 92, category: "Moderate", wind: "13 km/h ESE", temp: "23°C" }, { day: "Tomorrow", aqi: 85, category: "Moderate", wind: "16 km/h SE", temp: "22°C" }]
+      },
+
+      jakarta: {
+        id: "jakarta", name: "Jakarta", country: "Indonesia", region: "Southeast Asia", coords: [-6.2088, 106.8456], zoom: 11, aqi: 168, dominantPollutant: "PM2.5", population: 10560000,
+        healthBaseline: { annualRespiratoryVisits: 142000, annualHealthcareCostMillionUSD: 210, vulnerablePopulationPct: 25 },
+        pollutants: { pm25: 78.4, pm10: 125.0, no2: 48.0, so2: 26.0, co: 1.8, o3: 45.0 },
+        weather: { temp: 31, humidity: 82, windSpeed: 7.2, windDeg: 60, windDirectionText: "ENE", condition: "Humid Haze", inversionRisk: "High" },
+        sources: [
+          { id: "coal", name: "Surrounding Coal Power", percentage: 32, color: "#8b5cf6" },
+          { id: "traffic", name: "Motorbikes & Transport", percentage: 35, color: "#f97316" },
+          { id: "industry", name: "Industrial Manufacturing", percentage: 20, color: "#ef4444" }
+        ],
+        existingSensors: [{ id: "JKT-REF-01", name: "US Embassy Central", type: "reference", lat: -6.1820, lng: 106.8320, aqi: 172, status: "active", uptime: "99.5%", coverageRadiusKm: 3.8 }],
+        pointSources: [{ id: "PS-JKT-01", name: "Muara Karang Power", type: "Thermal Power", lat: -6.1150, lng: 106.7900, emissionRate: "Severe", dominantPollutant: "SO2" }],
+        candidateGrid: [{ id: "CAND-JKT-01", name: "Bekasi Border Corridor", lat: -6.2300, lng: 106.9500, popCount: 280000, vulnerabilityScore: 93, estimatedCostUSD: 14500, currentCoverage: "Zero" }],
+        cleanRoutes: [
+          {
+            id: "CR-JKT-01", title: "Thamrin to Senayan Green Line", start: [-6.1900, 106.8230], end: [-6.2200, 106.8050], startName: "Bundaran HI", endName: "Senayan MRT",
+            standardPath: [[-6.1900, 106.8230], [-6.2050, 106.8200], [-6.2200, 106.8050]], cleanPath: [[-6.1900, 106.8230], [-6.2000, 106.8120], [-6.2200, 106.8050]],
+            standardExposureAQI: 178, cleanExposureAQI: 112, exposureReductionPct: 37, distanceDeltaKm: "+0.7 km (via MRT corridor)"
+          }
+        ],
+        hourlyHistory: [{ hour: "00:00", aqi: 180, pm25: 86, no2: 52 }, { hour: "08:00", aqi: 195, pm25: 94, no2: 60 }, { hour: "16:00", aqi: 175, pm25: 82, no2: 54 }],
+        forecast7Day: [{ day: "Today", aqi: 168, category: "Unhealthy", wind: "7 km/h ENE", temp: "31°C" }, { day: "Tomorrow", aqi: 175, category: "Unhealthy", wind: "6 km/h E", temp: "32°C" }]
+      },
+
+      newyork: {
+        id: "newyork", name: "New York City", country: "United States", region: "North America", coords: [40.7128, -74.0060], zoom: 11, aqi: 52, dominantPollutant: "PM2.5", population: 8335000,
+        healthBaseline: { annualRespiratoryVisits: 41000, annualHealthcareCostMillionUSD: 105, vulnerablePopulationPct: 19 },
+        pollutants: { pm25: 12.8, pm10: 20.5, no2: 33.2, so2: 3.5, co: 0.7, o3: 46.0 },
+        weather: { temp: 20, humidity: 55, windSpeed: 15.2, windDeg: 260, windDirectionText: "W", condition: "Partly Sunny", inversionRisk: "Low" },
+        sources: [
+          { id: "traffic", name: "Midtown Traffic & Freights", percentage: 44, color: "#f97316" },
+          { id: "heating", name: "Boiler Heating Systems", percentage: 28, color: "#06b6d4" },
+          { id: "ports", name: "Port of NY/NJ & Marine", percentage: 16, color: "#8b5cf6" }
+        ],
+        existingSensors: [{ id: "NYC-REF-01", name: "CCNY Manhattan", type: "reference", lat: 40.8197, lng: -73.9496, aqi: 50, status: "active", uptime: "99.8%", coverageRadiusKm: 3.5 }],
+        pointSources: [{ id: "PS-NYC-01", name: "Hunts Point Food Hub", type: "Diesel Logistics", lat: 40.8100, lng: -73.8800, emissionRate: "High", dominantPollutant: "Diesel PM" }],
+        candidateGrid: [{ id: "CAND-NYC-01", name: "Cross-Bronx Chokepoint", lat: 40.8450, lng: -73.8950, popCount: 215000, vulnerabilityScore: 96, estimatedCostUSD: 15000, currentCoverage: "Gapped" }],
+        cleanRoutes: [
+          {
+            id: "CR-NYC-01", title: "Midtown to Downtown via Greenway", start: [40.7580, -73.9855], end: [40.7128, -74.0060], startName: "Times Square", endName: "World Trade Center",
+            standardPath: [[40.7580, -73.9855], [40.7350, -73.9950], [40.7128, -74.0060]], cleanPath: [[40.7580, -73.9855], [40.7600, -74.0000], [40.7300, -74.0100], [40.7128, -74.0060]],
+            standardExposureAQI: 68, cleanExposureAQI: 36, exposureReductionPct: 47, distanceDeltaKm: "+0.9 km (along Hudson Waterfront Park)"
+          }
+        ],
+        hourlyHistory: [{ hour: "00:00", aqi: 40, pm25: 9, no2: 22 }, { hour: "08:00", aqi: 62, pm25: 16, no2: 42 }, { hour: "16:00", aqi: 54, pm25: 13, no2: 34 }],
+        forecast7Day: [{ day: "Today", aqi: 52, category: "Moderate", wind: "15 km/h W", temp: "20°C" }, { day: "Tomorrow", aqi: 46, category: "Good", wind: "18 km/h NW", temp: "19°C" }]
+      },
+
+      sydney: {
+        id: "sydney", name: "Sydney", country: "Australia", region: "Oceania", coords: [-33.8688, 151.2093], zoom: 11, aqi: 32, dominantPollutant: "PM2.5", population: 5312000,
+        healthBaseline: { annualRespiratoryVisits: 16000, annualHealthcareCostMillionUSD: 35, vulnerablePopulationPct: 15 },
+        pollutants: { pm25: 6.8, pm10: 14.2, no2: 18.0, so2: 1.5, co: 0.3, o3: 38.0 },
+        weather: { temp: 22, humidity: 58, windSpeed: 21.0, windDeg: 80, windDirectionText: "ENE", condition: "Sunny & Sea Breeze", inversionRisk: "Low" },
+        sources: [
+          { id: "traffic", name: "Motorways & Urban Traffic", percentage: 46, color: "#f97316" },
+          { id: "bushfire", name: "Bushfire & Hazard Burns", percentage: 24, color: "#ef4444" }
+        ],
+        existingSensors: [{ id: "SYD-REF-01", name: "Rozelle Station", type: "reference", lat: -33.8680, lng: 151.1710, aqi: 30, status: "active", uptime: "99.9%", coverageRadiusKm: 5.0 }],
+        pointSources: [{ id: "PS-SYD-01", name: "Port Botany Industrial", type: "Maritime", lat: -33.9700, lng: 151.2100, emissionRate: "Moderate", dominantPollutant: "PM10" }],
+        candidateGrid: [{ id: "CAND-SYD-01", name: "Liverpool Basin Node", lat: -33.9200, lng: 150.9200, popCount: 120000, vulnerabilityScore: 78, estimatedCostUSD: 11000, currentCoverage: "Moderate" }],
+        cleanRoutes: [
+          {
+            id: "CR-SYD-01", title: "Circular Quay to Botanic Gardens", start: [-33.8614, 151.2108], end: [-33.8640, 151.2170], startName: "Circular Quay", endName: "Botanic Gardens",
+            standardPath: [[-33.8614, 151.2108], [-33.8630, 151.2130], [-33.8640, 151.2170]], cleanPath: [[-33.8614, 151.2108], [-33.8590, 151.2140], [-33.8640, 151.2170]],
+            standardExposureAQI: 35, cleanExposureAQI: 18, exposureReductionPct: 48, distanceDeltaKm: "+0.2 km (via Opera House foreshore)"
+          }
+        ],
+        hourlyHistory: [{ hour: "00:00", aqi: 24, pm25: 5, no2: 12 }, { hour: "08:00", aqi: 38, pm25: 8, no2: 24 }, { hour: "16:00", aqi: 34, pm25: 7, no2: 18 }],
+        forecast7Day: [{ day: "Today", aqi: 32, category: "Good", wind: "21 km/h ENE", temp: "22°C" }, { day: "Tomorrow", aqi: 28, category: "Good", wind: "24 km/h E", temp: "21°C" }]
+      },
+
+      bangkok: {
+        id: "bangkok", name: "Bangkok", country: "Thailand", region: "Southeast Asia", coords: [13.7563, 100.5018], zoom: 11, aqi: 156, dominantPollutant: "PM2.5", population: 10720000,
+        healthBaseline: { annualRespiratoryVisits: 128000, annualHealthcareCostMillionUSD: 195, vulnerablePopulationPct: 23 },
+        pollutants: { pm25: 66.5, pm10: 108.0, no2: 42.0, so2: 18.0, co: 1.5, o3: 54.0 },
+        weather: { temp: 33, humidity: 76, windSpeed: 8.0, windDeg: 190, windDirectionText: "S", condition: "Hazy & Hot", inversionRisk: "High" },
+        sources: [
+          { id: "traffic", name: "Traffic Congestion & Diesel", percentage: 45, color: "#f97316" },
+          { id: "biomass", name: "Agricultural Stubble Burning", percentage: 28, color: "#ef4444" },
+          { id: "industry", name: "Samut Prakan Industrial Belt", percentage: 18, color: "#8b5cf6" }
+        ],
+        existingSensors: [{ id: "BKK-REF-01", name: "Din Daeng Reference", type: "reference", lat: 13.7650, lng: 100.5550, aqi: 162, status: "active", uptime: "99.4%", coverageRadiusKm: 4.0 }],
+        pointSources: [{ id: "PS-BKK-01", name: "Samut Prakan Industrial", type: "Chemical & Metal", lat: 13.5900, lng: 100.6000, emissionRate: "High", dominantPollutant: "PM2.5" }],
+        candidateGrid: [{ id: "CAND-BKK-01", name: "Siam Paragon Transit", lat: 13.7460, lng: 100.5350, popCount: 230000, vulnerabilityScore: 91, estimatedCostUSD: 14000, currentCoverage: "Gapped" }],
+        cleanRoutes: [
+          {
+            id: "CR-BKK-01", title: "Lumphini to Benjakitti Forest Walkway", start: [13.7300, 100.5400], end: [13.7280, 100.5600], startName: "Lumphini Park", endName: "Benjakitti Park",
+            standardPath: [[13.7300, 100.5400], [13.7270, 100.5500], [13.7280, 100.5600]], cleanPath: [[13.7300, 100.5400], [13.7320, 100.5500], [13.7280, 100.5600]],
+            standardExposureAQI: 165, cleanExposureAQI: 98, exposureReductionPct: 40, distanceDeltaKm: "+0.4 km (via Green Mile sky-walk)"
+          }
+        ],
+        hourlyHistory: [{ hour: "00:00", aqi: 168, pm25: 75, no2: 44 }, { hour: "08:00", aqi: 185, pm25: 88, no2: 56 }, { hour: "16:00", aqi: 162, pm25: 72, no2: 48 }],
+        forecast7Day: [{ day: "Today", aqi: 156, category: "Unhealthy", wind: "8 km/h S", temp: "33°C" }, { day: "Tomorrow", aqi: 162, category: "Unhealthy", wind: "7 km/h S", temp: "34°C" }]
+      },
+
+      mumbai: {
+        id: "mumbai", name: "Mumbai", country: "India", region: "South Asia", coords: [19.0760, 72.8777], zoom: 11, aqi: 178, dominantPollutant: "PM2.5", population: 21300000,
+        healthBaseline: { annualRespiratoryVisits: 175000, annualHealthcareCostMillionUSD: 280, vulnerablePopulationPct: 27 },
+        pollutants: { pm25: 84.5, pm10: 162.0, no2: 46.5, so2: 22.0, co: 1.9, o3: 48.0 },
+        weather: { temp: 31, humidity: 78, windSpeed: 14.5, windDeg: 280, windDirectionText: "W", condition: "Coastal Haze", inversionRisk: "Moderate" },
+        sources: [
+          { id: "construction", name: "Infrastructure & Metro Dust", percentage: 35, color: "#eab308" },
+          { id: "traffic", name: "Western Express Highway Fleet", percentage: 32, color: "#f97316" },
+          { id: "industry", name: "Chembur Refinery Cluster", percentage: 21, color: "#8b5cf6" }
+        ],
+        existingSensors: [{ id: "BOM-REF-01", name: "Bandra Kurla Complex", type: "reference", lat: 19.0600, lng: 72.8650, aqi: 192, status: "active", uptime: "99.1%", coverageRadiusKm: 3.5 }],
+        pointSources: [{ id: "PS-BOM-01", name: "Chembur Mahul Refinery", type: "Petrochemical", lat: 19.0150, lng: 72.9050, emissionRate: "Severe", dominantPollutant: "VOC, SO2" }],
+        candidateGrid: [{ id: "CAND-BOM-01", name: "Andheri West Concourse", lat: 19.1200, lng: 72.8350, popCount: 340000, vulnerabilityScore: 95, estimatedCostUSD: 15500, currentCoverage: "Poor" }],
+        cleanRoutes: [
+          {
+            id: "CR-BOM-01", title: "Marine Drive Coastal Walkway", start: [18.9400, 72.8230], end: [18.9550, 72.8180], startName: "Churchgate", endName: "Chowpatty Beach",
+            standardPath: [[18.9400, 72.8230], [18.9480, 72.8250], [18.9550, 72.8180]], cleanPath: [[18.9400, 72.8230], [18.9460, 72.8210], [18.9550, 72.8180]],
+            standardExposureAQI: 185, cleanExposureAQI: 95, exposureReductionPct: 48, distanceDeltaKm: "+0.3 km (along sea-breeze edge)"
+          }
+        ],
+        hourlyHistory: [{ hour: "00:00", aqi: 195, pm25: 98, no2: 54 }, { hour: "08:00", aqi: 215, pm25: 112, no2: 68 }, { hour: "16:00", aqi: 182, pm25: 89, no2: 52 }],
+        forecast7Day: [{ day: "Today", aqi: 178, category: "Unhealthy", wind: "14 km/h W", temp: "31°C" }, { day: "Tomorrow", aqi: 185, category: "Unhealthy", wind: "12 km/h WNW", temp: "32°C" }]
+      },
+
+      mexicocity: {
+        id: "mexicocity", name: "Mexico City", country: "Mexico", region: "North America", coords: [19.4326, -99.1332], zoom: 11, aqi: 135, dominantPollutant: "Ozone", population: 9209000,
+        healthBaseline: { annualRespiratoryVisits: 82000, annualHealthcareCostMillionUSD: 145, vulnerablePopulationPct: 22 },
+        pollutants: { pm25: 34.0, pm10: 68.0, no2: 44.0, so2: 14.0, co: 1.8, o3: 94.0 },
+        weather: { temp: 24, humidity: 45, windSpeed: 10.5, windDeg: 350, windDirectionText: "N", condition: "Sunny & Valley Smog", inversionRisk: "High" },
+        sources: [
+          { id: "traffic", name: "High-Altitude Combustion", percentage: 48, color: "#f97316" },
+          { id: "industry", name: "Tula / Ecatepec Complex", percentage: 26, color: "#8b5cf6" },
+          { id: "dust", name: "Texcoco Dry Lakebed Dust", percentage: 16, color: "#eab308" }
+        ],
+        existingSensors: [{ id: "MEX-REF-01", name: "Merced Urban Central", type: "reference", lat: 19.4245, lng: -99.1198, aqi: 142, status: "active", uptime: "99.6%", coverageRadiusKm: 4.2 }],
+        pointSources: [{ id: "PS-MEX-01", name: "Ecatepec Metallurgy", type: "Industrial Zone", lat: 19.5300, lng: -99.0300, emissionRate: "Severe", dominantPollutant: "SO2, PM10" }],
+        candidateGrid: [{ id: "CAND-MEX-01", name: "Iztapalapa Residential", lat: 19.3550, lng: -99.0600, popCount: 320000, vulnerabilityScore: 94, estimatedCostUSD: 14000, currentCoverage: "Poor" }],
+        cleanRoutes: [
+          {
+            id: "CR-MEX-01", title: "Reforma to Chapultepec Park Cycleway", start: [19.4300, -99.1600], end: [19.4200, -99.1850], startName: "Angel of Independence", endName: "Chapultepec",
+            standardPath: [[19.4300, -99.1600], [19.4250, -99.1720], [19.4200, -99.1850]], cleanPath: [[19.4300, -99.1600], [19.4280, -99.1700], [19.4200, -99.1850]],
+            standardExposureAQI: 145, cleanExposureAQI: 82, exposureReductionPct: 43, distanceDeltaKm: "+0.4 km (via tree-canopied bike lane)"
+          }
+        ],
+        hourlyHistory: [{ hour: "00:00", aqi: 72, pm25: 18, no2: 28 }, { hour: "08:00", aqi: 110, pm25: 28, no2: 52 }, { hour: "16:00", aqi: 160, pm25: 46, no2: 35 }],
+        forecast7Day: [{ day: "Today", aqi: 135, category: "Unhealthy for Sensitive", wind: "10 km/h N", temp: "24°C" }, { day: "Tomorrow", aqi: 142, category: "Unhealthy for Sensitive", wind: "9 km/h NNE", temp: "25°C" }]
+      },
+
+      seoul: {
+        id: "seoul", name: "Seoul", country: "South Korea", region: "East Asia", coords: [37.5665, 126.9780], zoom: 11, aqi: 95, dominantPollutant: "PM2.5", population: 9776000,
+        healthBaseline: { annualRespiratoryVisits: 52000, annualHealthcareCostMillionUSD: 115, vulnerablePopulationPct: 20 },
+        pollutants: { pm25: 28.5, pm10: 52.0, no2: 36.5, so2: 5.0, co: 0.8, o3: 48.0 },
+        weather: { temp: 17, humidity: 52, windSpeed: 11.0, windDeg: 280, windDirectionText: "W", condition: "Hazy Sun", inversionRisk: "Moderate" },
+        sources: [
+          { id: "traffic", name: "Gangnam Expressway Fleet", percentage: 38, color: "#f97316" },
+          { id: "transboundary", name: "Yellow Sea Regional Drift", percentage: 32, color: "#8b5cf6" },
+          { id: "heating", name: "District Heating & Incheon Port", percentage: 18, color: "#06b6d4" }
+        ],
+        existingSensors: [{ id: "ICN-REF-01", name: "Jongno City Hall", type: "reference", lat: 37.5720, lng: 126.9920, aqi: 98, status: "active", uptime: "99.8%", coverageRadiusKm: 4.0 }],
+        pointSources: [{ id: "PS-ICN-01", name: "Incheon Port & Thermal Cluster", type: "Maritime & Power", lat: 37.4500, lng: 126.6200, emissionRate: "High", dominantPollutant: "PM2.5" }],
+        candidateGrid: [{ id: "CAND-ICN-01", name: "Yeouido Financial Hub", lat: 37.5210, lng: 126.9240, popCount: 160000, vulnerabilityScore: 82, estimatedCostUSD: 13500, currentCoverage: "Moderate" }],
+        cleanRoutes: [
+          {
+            id: "CR-ICN-01", title: "Cheonggyecheon Stream Walkway", start: [37.5690, 126.9780], end: [37.5700, 127.0100], startName: "Cheonggye Plaza", endName: "Dongdaemun DDP",
+            standardPath: [[37.5690, 126.9780], [37.5680, 126.9950], [37.5700, 127.0100]], cleanPath: [[37.5690, 126.9780], [37.5705, 126.9950], [37.5700, 127.0100]],
+            standardExposureAQI: 104, cleanExposureAQI: 62, exposureReductionPct: 40, distanceDeltaKm: "+0.1 km (down sunken stream)"
+          }
+        ],
+        hourlyHistory: [{ hour: "00:00", aqi: 82, pm25: 22, no2: 30 }, { hour: "08:00", aqi: 112, pm25: 35, no2: 48 }, { hour: "16:00", aqi: 96, pm25: 29, no2: 38 }],
+        forecast7Day: [{ day: "Today", aqi: 95, category: "Moderate", wind: "11 km/h W", temp: "17°C" }, { day: "Tomorrow", aqi: 105, category: "Unhealthy for Sensitive", wind: "9 km/h WSW", temp: "18°C" }]
+      },
+
+      berlin: {
+        id: "berlin", name: "Berlin", country: "Germany", region: "Europe", coords: [52.5200, 13.4050], zoom: 11, aqi: 44, dominantPollutant: "PM2.5", population: 3677000,
+        healthBaseline: { annualRespiratoryVisits: 18000, annualHealthcareCostMillionUSD: 42, vulnerablePopulationPct: 16 },
+        pollutants: { pm25: 9.8, pm10: 17.5, no2: 24.0, so2: 2.2, co: 0.4, o3: 45.0 },
+        weather: { temp: 15, humidity: 64, windSpeed: 14.0, windDeg: 250, windDirectionText: "WSW", condition: "Breezy & Fair", inversionRisk: "Low" },
+        sources: [
+          { id: "traffic", name: "Inner-City Traffic & Ring A100", percentage: 42, color: "#f97316" },
+          { id: "heating", name: "District Heating & Wood Stoves", percentage: 26, color: "#06b6d4" },
+          { id: "regional", name: "Eastern Regional Drift", percentage: 20, color: "#10b981" }
+        ],
+        existingSensors: [{ id: "BER-REF-01", name: "Alexanderplatz Air Station", type: "reference", lat: 52.5220, lng: 13.4130, aqi: 48, status: "active", uptime: "99.9%", coverageRadiusKm: 3.5 }],
+        pointSources: [{ id: "PS-BER-01", name: "Klingenberg Power Station", type: "Power & Heat", lat: 52.4850, lng: 13.4950, emissionRate: "Moderate", dominantPollutant: "NO2" }],
+        candidateGrid: [{ id: "CAND-BER-01", name: "Neukölln Karl-Marx-Str", lat: 52.4800, lng: 13.4400, popCount: 95000, vulnerabilityScore: 81, estimatedCostUSD: 11000, currentCoverage: "Gapped" }],
+        cleanRoutes: [
+          {
+            id: "CR-BER-01", title: "Potsdamer Platz to Brandenburger Tor via Tiergarten", start: [52.5096, 13.3759], end: [52.5163, 13.3777], startName: "Potsdamer Platz", endName: "Brandenburg Gate",
+            standardPath: [[52.5096, 13.3759], [52.5130, 13.3770], [52.5163, 13.3777]], cleanPath: [[52.5096, 13.3759], [52.5120, 13.3710], [52.5163, 13.3777]],
+            standardExposureAQI: 50, cleanExposureAQI: 28, exposureReductionPct: 44, distanceDeltaKm: "+0.3 km (through Tiergarten forest)"
+          }
+        ],
+        hourlyHistory: [{ hour: "00:00", aqi: 34, pm25: 7, no2: 18 }, { hour: "08:00", aqi: 52, pm25: 12, no2: 32 }, { hour: "16:00", aqi: 46, pm25: 10, no2: 26 }],
+        forecast7Day: [{ day: "Today", aqi: 44, category: "Good", wind: "14 km/h WSW", temp: "15°C" }, { day: "Tomorrow", aqi: 38, category: "Good", wind: "18 km/h W", temp: "16°C" }]
+      }
+    };
+
+    /* ==========================================================================
+       2. AQI CALCULATOR & HEALTH ADVISORY FUNCTIONS
+       ========================================================================== */
+    function getAqiCategory(aqiValue) {
+      const cleanAqi = Math.max(0, Math.min(500, Math.round(aqiValue)));
+      for (const bp of AQI_BREAKPOINTS) {
+        if (cleanAqi >= bp.min && cleanAqi <= bp.max) return bp;
+      }
+      return AQI_BREAKPOINTS[AQI_BREAKPOINTS.length - 1];
+    }
+
+    function getWhoComparison(pollutantKey, value) {
+      const who = WHO_GUIDELINES[pollutantKey];
+      if (!who) return null;
+      const ratio = (value / who.guideline).toFixed(1);
+      const isExceeded = value > who.guideline;
+      return {
+        guideline: who.guideline,
+        unit: who.unit,
+        ratio: parseFloat(ratio),
+        isExceeded,
+        text: isExceeded ? `${ratio}x WHO limit` : "Within WHO safe limit"
+      };
+    }
+
+    function getHealthAdvisories(aqiValue) {
+      if (aqiValue <= 50) {
+        return {
+          status: "Ideal Air Quality",
+          general: "Air quality is ideal for all outdoor activities. Open windows and enjoy natural ventilation.",
+          sensitive: "No health precautions needed. Safe for individuals with asthma or cardiovascular conditions.",
+          athletes: "Great day for vigorous outdoor workouts, running, cycling, and sports.",
+          indoor: "No air filtration necessary. Natural airflow recommended.",
+          maskRecommendation: "No mask required."
+        };
+      } else if (aqiValue <= 100) {
+        return {
+          status: "Acceptable Air Quality",
+          general: "Air quality is acceptable. Enjoy normal daily activities outdoors.",
+          sensitive: "Extremely sensitive individuals may experience slight respiratory irritation.",
+          athletes: "Normal outdoor exercise is fine. Highly prolonged strenuous workouts may cause minor dryness.",
+          indoor: "Standard ventilation is fine. Run HEPA filters if known allergies exist.",
+          maskRecommendation: "No mask required for general public."
+        };
+      } else if (aqiValue <= 150) {
+        return {
+          status: "Elevated Risk for Sensitive Groups",
+          general: "General public can be active outdoors, but reduce continuous heavy exertion if fatigue occurs.",
+          sensitive: "Children, seniors, and people with asthma should limit prolonged outdoor exertion.",
+          athletes: "Shift intense cardio workouts to early morning hours or use indoor gym facilities.",
+          indoor: "Keep windows closed during peak traffic hours. Turn on indoor air purifiers.",
+          maskRecommendation: "N95 / FFP2 masks recommended for asthmatics and elderly in dense traffic."
+        };
+      } else if (aqiValue <= 200) {
+        return {
+          status: "Unhealthy for Everyone",
+          general: "Everyone may begin to experience irritation, coughing, and eye stinging. Avoid prolonged outdoor stays.",
+          sensitive: "Children and elderly should avoid outdoor activities completely. Keep emergency inhalers handy.",
+          athletes: "Avoid all outdoor running and cycling. Replace with indoor workouts with air filtration.",
+          indoor: "Keep all windows tightly closed. Run HEPA purifiers on medium-high speed.",
+          maskRecommendation: "Well-fitted N95 / KN95 / FFP2 mask strongly advised outdoors."
+        };
+      } else if (aqiValue <= 300) {
+        return {
+          status: "Very Unhealthy - Health Alert",
+          general: "Serious health alert: Significant reduction of outdoor exposure required for all residents.",
+          sensitive: "Strict stay-at-home advisory for vulnerable populations. Seal living spaces against soot.",
+          athletes: "Cease all outdoor physical activities entirely. High risk of acute respiratory distress.",
+          indoor: "Create a clean-air room at home with continuous HEPA filtration.",
+          maskRecommendation: "N95 / FFP3 mask mandatory for any unavoidable outdoor transit."
+        };
+      } else {
+        return {
+          status: "Hazardous - Emergency Conditions",
+          general: "Emergency conditions: Entire population is likely to experience severe adverse symptoms.",
+          sensitive: "High medical risk: Vulnerable individuals must remain strictly indoors in filtered environments.",
+          athletes: "Strictly prohibited: Heavy exertion outdoors causes severe toxic particulate intake.",
+          indoor: "Keep indoor air purifiers on maximum. Avoid using gas stoves.",
+          maskRecommendation: "Certified N95/N99 respirator required for any emergency step outside."
+        };
+      }
+    }
+
+    /* ==========================================================================
+       3. MATHEMATICAL OPTIMIZATION & DISPERSION ENGINE
+       ========================================================================== */
+    function haversineDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function solveOptimalSensorSiting(city, options = {}) {
+      const budgetUSD = options.budgetUSD || 60000;
+      const stationType = options.stationType || "mixed";
+      const refCost = 25000;
+      const iotCost = 4500;
+      const popWeight = options.populationWeight || 0.6;
+      const vulnWeight = options.vulnerabilityWeight || 0.4;
+
+      const candidates = city.candidateGrid || [];
+      const existing = city.existingSensors || [];
+
+      let totalPop = 0;
+      candidates.forEach(c => totalPop += (c.popCount || 100000));
+
+      let remainingBudget = budgetUSD;
+      const selectedSites = [];
+      const unselected = [...candidates];
+
+      while (unselected.length > 0) {
+        let bestIdx = -1;
+        let bestScore = -1;
+        let bestConfig = null;
+
+        for (let i = 0; i < unselected.length; i++) {
+          const cand = unselected[i];
+          const configs = [];
+          if ((stationType === "mixed" || stationType === "iot") && remainingBudget >= iotCost) {
+            configs.push({ type: "iot", cost: iotCost, radius: 1.8 });
+          }
+          if ((stationType === "mixed" || stationType === "reference") && remainingBudget >= refCost) {
+            configs.push({ type: "reference", cost: refCost, radius: 4.0 });
+          }
+
+          for (const cfg of configs) {
+            const popVal = (cand.popCount || 100000) / 10000;
+            const vuln = cand.vulnerabilityScore || 50;
+            const utility = (popWeight * popVal) + (vulnWeight * vuln);
+            const scorePerDollar = utility / (cfg.cost / 1000);
+
+            if (scorePerDollar > bestScore) {
+              bestScore = scorePerDollar;
+              bestIdx = i;
+              bestConfig = cfg;
+            }
+          }
+        }
+
+        if (bestIdx !== -1 && bestConfig) {
+          const chosen = unselected.splice(bestIdx, 1)[0];
+          remainingBudget -= bestConfig.cost;
+          selectedSites.push({
+            ...chosen,
+            assignedType: bestConfig.type,
+            assignedCost: bestConfig.cost,
+            assignedRadiusKm: bestConfig.radius,
+            rank: selectedSites.length + 1
+          });
+        } else {
+          break;
+        }
+      }
+
+      const baselineCoverage = 48;
+      const finalCoverage = Math.min(99, baselineCoverage + (selectedSites.length * 12));
+      const delta = finalCoverage - baselineCoverage;
+      const latency = Math.max(5, 32 - (selectedSites.length * 4));
+
+      return {
+        selectedSites,
+        totalSpentUSD: budgetUSD - remainingBudget,
+        remainingBudgetUSD: remainingBudget,
+        finalCoveragePct: finalCoverage,
+        coverageDeltaPct: delta,
+        detectionLatencyMin: latency,
+        optimalityScore: Math.min(100, Math.round((finalCoverage * 0.7) + (selectedSites.length * 5)))
+      };
+    }
+
+    function calculateGaussianPlume(pointSource, windSpeedMps, windDeg, distanceKm = 8) {
+      const a = 0.32, b = 0.81, c = 0.22, d = 0.78;
+      const windRad = (windDeg * Math.PI) / 180;
+      const plumePoints = [];
+      const baseEmission = pointSource.emissionRate === "Severe" ? 110 : 70;
+
+      for (let dist = 0.6; dist <= distanceKm; dist += 1.0) {
+        const sigmaY = a * Math.pow(dist, b);
+        const sigmaZ = c * Math.pow(dist, d);
+        const centerConc = (baseEmission / (2 * Math.PI * Math.max(1.5, windSpeedMps) * sigmaY * sigmaZ));
+        
+        const dLat = (dist * Math.cos(windRad)) / 111.0;
+        const dLng = (dist * Math.sin(windRad)) / (111.0 * Math.cos(pointSource.lat * Math.PI / 180));
+
+        plumePoints.push({
+          centerLat: pointSource.lat + dLat,
+          centerLng: pointSource.lng + dLng,
+          concentrationUgM3: Math.round(centerConc * 10) / 10,
+          radiusKm: Math.round(sigmaY * 10) / 10,
+          distanceKm: dist
+        });
+      }
+      return plumePoints;
+    }
+
+    const AVAILABLE_INTERVENTIONS = [
+      { id: "lez", name: "Low Emission Zone (LEZ / ULEZ)", category: "Traffic", costPerYearUSD: 1800000, pm25ReductionPct: 14, no2ReductionPct: 22, description: "Restricts pre-Euro 6 diesel vehicles from core urban corridors." },
+      { id: "scrubbers", name: "Industrial Flue-Gas Desulfurization Scrubbers", category: "Industry", costPerYearUSD: 3500000, pm25ReductionPct: 20, no2ReductionPct: 8, description: "Mandates 98% efficiency particulate filters and scrubbers on smokestacks." },
+      { id: "green_belts", name: "Urban Green Canopies & Forest Buffers", category: "Ecology", costPerYearUSD: 1200000, pm25ReductionPct: 8, no2ReductionPct: 4, description: "Bio-filtering tree corridors along major ring roads and perimeters." },
+      { id: "misting", name: "Anti-Smog Water Misting Cannons", category: "Dust", costPerYearUSD: 850000, pm25ReductionPct: 10, no2ReductionPct: 2, description: "High-pressure micro-droplet misting cannons to suppress suspended road dust." },
+      { id: "ev_fleet", name: "100% Electric Municipal Transit Conversion", category: "Traffic", costPerYearUSD: 4200000, pm25ReductionPct: 16, no2ReductionPct: 25, description: "Replaces diesel bus fleet with zero-emission battery EVs." }
+    ];
+
+    function simulateAbatementImpact(city, activeIds = [], scaleMultiplier = 1.0) {
+      const activeList = AVAILABLE_INTERVENTIONS.filter(i => activeIds.includes(i.id));
+      if (activeList.length === 0) {
+        return { simulatedAqi: city.aqi, aqiDelta: 0, pm25Delta: 0, simulatedPm25: city.pollutants.pm25, combinedPm25RedPct: 0, totalAnnualCostUSD: 0, avoidedHospitalizations: 0, economicSavingsUSD: 0, benefitCostRatio: 0 };
+      }
+
+      let combinedPm25Red = 0;
+      let totalCost = 0;
+
+      activeList.forEach(interv => {
+        const eff = (interv.pm25ReductionPct * scaleMultiplier) / 100;
+        combinedPm25Red = combinedPm25Red + (1 - combinedPm25Red) * eff;
+        totalCost += (interv.costPerYearUSD * scaleMultiplier);
+      });
+
+      const simulatedAqi = Math.max(25, Math.round(city.aqi * (1 - (combinedPm25Red * 0.85))));
+      const aqiDelta = city.aqi - simulatedAqi;
+      const currentPm25 = city.pollutants.pm25;
+      const simulatedPm25 = Math.max(4.0, Math.round((currentPm25 * (1 - combinedPm25Red)) * 10) / 10);
+      const pm25Delta = Math.round((currentPm25 - simulatedPm25) * 10) / 10;
+
+      const health = city.healthBaseline || { annualRespiratoryVisits: 50000, annualHealthcareCostMillionUSD: 100 };
+      const avoidedVisits = Math.round(health.annualRespiratoryVisits * (combinedPm25Red * 0.65));
+      const healthSavingsUSD = Math.round((health.annualHealthcareCostMillionUSD * 1000000) * (combinedPm25Red * 0.7));
+      const bcr = totalCost > 0 ? (healthSavingsUSD / totalCost).toFixed(2) : "0.00";
+
+      return {
+        simulatedAqi, aqiDelta, pm25Delta, simulatedPm25,
+        combinedPm25RedPct: Math.round(combinedPm25Red * 100),
+        totalAnnualCostUSD: totalCost,
+        avoidedHospitalizations: avoidedVisits,
+        economicSavingsUSD: healthSavingsUSD,
+        benefitCostRatio: parseFloat(bcr)
+      };
+    }
+
+    /* ==========================================================================
+       4. GEOSPATIAL LEAFLET MAP HANDLER
+       ========================================================================== */
+    class AtmosMap {
+      constructor(containerId) {
+        this.containerId = containerId;
+        this.map = null;
+        this.layers = { heat: null, sensors: null, pointSources: null, plumes: null, candidates: null, routes: null, citizenIncidents: null };
+        this.initMap();
+      }
+
+      initMap() {
+        const darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; CARTO | AtmosOptima', maxZoom: 18
+        });
+
+        this.map = L.map(this.containerId, { center: [28.6139, 77.2090], zoom: 11, layers: [darkTiles] });
+        for (const k in this.layers) {
+          this.layers[k] = L.layerGroup().addTo(this.map);
+        }
+      }
+
+      loadCity(city, selectedCandidateIds = []) {
+        this.map.flyTo(city.coords, city.zoom || 11, { duration: 1.0 });
+        this.renderHeatmap(city);
+        this.renderSensors(city);
+        this.renderPointSourcesAndPlumes(city);
+        this.renderCandidateGrid(city, selectedCandidateIds);
+        if (city.cleanRoutes && city.cleanRoutes.length > 0) {
+          this.renderCleanRoute(city.cleanRoutes[0]);
+        }
+      }
+
+      renderHeatmap(city) {
+        this.layers.heat.clearLayers();
+        const baseAqi = city.aqi;
+        for (let r = 0; r < 4; r++) {
+          const cat = getAqiCategory(Math.max(20, baseAqi - (r * 22)));
+          const circle = L.circle(city.coords, {
+            radius: (r + 1) * 3200, color: cat.color, fillColor: cat.color, fillOpacity: 0.08 - (r * 0.015), weight: 1, dashArray: "3, 6"
+          });
+          this.layers.heat.addLayer(circle);
+        }
+      }
+
+      renderSensors(city) {
+        this.layers.sensors.clearLayers();
+        (city.existingSensors || []).forEach(s => {
+          const cat = getAqiCategory(s.aqi);
+          const isRef = s.type === "reference";
+          const iconHtml = `
+            <div class="relative flex items-center justify-center">
+              <div class="absolute w-8 h-8 rounded-full ${isRef ? 'bg-indigo-500/30' : 'bg-emerald-500/30'} animate-ping"></div>
+              <div class="relative w-7 h-7 rounded-full flex items-center justify-center shadow-lg border-2 border-white text-white text-xs font-bold font-mono" style="background-color: ${cat.color};">
+                ${s.aqi}
+              </div>
+            </div>
+          `;
+          const marker = L.marker([s.lat, s.lng], {
+            icon: L.divIcon({ className: 'custom-sensor-marker', html: iconHtml, iconSize: [28, 28], iconAnchor: [14, 14] })
+          });
+          marker.bindPopup(`
+            <div class="p-2 min-w-[190px] text-slate-800">
+              <span class="text-[10px] font-bold text-slate-500 uppercase">${s.id}</span>
+              <h4 class="font-bold text-sm text-slate-900">${s.name}</h4>
+              <div class="text-xl font-black mt-1" style="color: ${cat.color}">AQI ${s.aqi} (${cat.label})</div>
+              <div class="text-xs text-slate-600 mt-1">Uptime: <strong>${s.uptime}</strong> | Type: <strong>${isRef ? 'Reference Grade' : 'IoT Micro'}</strong></div>
+            </div>
+          `);
+          this.layers.sensors.addLayer(marker);
+        });
+      }
+
+      renderPointSourcesAndPlumes(city) {
+        this.layers.pointSources.clearLayers();
+        this.layers.plumes.clearLayers();
+        const windSpeed = (city.weather?.windSpeed || 10) / 3.6;
+        const windDeg = city.weather?.windDeg || 270;
+
+        (city.pointSources || []).forEach(ps => {
+          const marker = L.marker([ps.lat, ps.lng], {
+            icon: L.divIcon({ className: 'point-source-marker', html: '<div class="w-7 h-7 rounded-full bg-rose-600 border-2 border-white flex items-center justify-center text-white text-xs shadow-lg">🏭</div>', iconSize: [28, 28], iconAnchor: [14, 14] })
+          });
+          marker.bindPopup(`<div class="p-2 text-slate-800 font-sans"><span class="text-rose-600 text-[10px] font-bold">EMISSION SOURCE</span><h4 class="font-bold text-sm">${ps.name}</h4><div class="text-xs text-slate-600">${ps.type} - Rate: ${ps.emissionRate}</div></div>`);
+          this.layers.pointSources.addLayer(marker);
+
+          const plumeSteps = calculateGaussianPlume(ps, windSpeed, windDeg, 8);
+          plumeSteps.forEach((step, idx) => {
+            const plumeCircle = L.circle([step.centerLat, step.centerLng], {
+              radius: step.radiusKm * 1000, color: '#f43f5e', fillColor: '#f43f5e', fillOpacity: Math.max(0.04, 0.22 - (idx * 0.025)), weight: 0.5, dashArray: "2, 4"
+            });
+            this.layers.plumes.addLayer(plumeCircle);
+          });
+        });
+      }
+
+      renderCandidateGrid(city, selectedIds = []) {
+        this.layers.candidates.clearLayers();
+        (city.candidateGrid || []).forEach(cand => {
+          const isSelected = selectedIds.includes(cand.id);
+          const iconHtml = isSelected
+            ? `<div class="relative flex items-center justify-center"><div class="absolute w-8 h-8 rounded-full bg-emerald-400/40 animate-ping"></div><div class="w-8 h-8 rounded-full bg-emerald-500 border-2 border-white text-white flex items-center justify-center font-bold text-xs shadow-xl">✓</div></div>`
+            : `<div class="w-6 h-6 rounded-full bg-slate-700/80 border border-slate-300 flex items-center justify-center text-slate-200 text-[10px]">🎯</div>`;
+
+          const marker = L.marker([cand.lat, cand.lng], {
+            icon: L.divIcon({ className: 'candidate-marker', html: iconHtml, iconSize: [28, 28], iconAnchor: [14, 14] })
+          });
+
+          if (isSelected) {
+            const circle = L.circle([cand.lat, cand.lng], { radius: 2000, color: '#10b981', fillColor: '#10b981', fillOpacity: 0.12, weight: 2, dashArray: "6, 6" });
+            this.layers.candidates.addLayer(circle);
+          }
+
+          marker.bindPopup(`
+            <div class="p-2 text-slate-800 font-sans min-w-[200px]">
+              <span class="text-[10px] font-bold ${isSelected ? 'text-emerald-600' : 'text-slate-500'} uppercase">${cand.id} - ${isSelected ? '★ Optimal Site' : 'Candidate Site'}</span>
+              <h4 class="font-bold text-sm text-slate-900">${cand.name}</h4>
+              <div class="text-xs text-slate-600 mt-1">Pop: <strong>${cand.popCount.toLocaleString()}</strong> | Vuln: <strong>${cand.vulnerabilityScore}/100</strong></div>
+            </div>
+          `);
+          this.layers.candidates.addLayer(marker);
+        });
+      }
+
+      renderCleanRoute(route) {
+        this.layers.routes.clearLayers();
+        if (!route) return;
+        if (route.standardPath) {
+          this.layers.routes.addLayer(L.polyline(route.standardPath, { color: '#ef4444', weight: 5, opacity: 0.75, dashArray: "8, 6" }));
+        }
+        if (route.cleanPath) {
+          this.layers.routes.addLayer(L.polyline(route.cleanPath, { color: '#10b981', weight: 6, opacity: 0.95 }));
+        }
+      }
+
+      addCitizenIncident(incident) {
+        const marker = L.marker([incident.lat, incident.lng], {
+          icon: L.divIcon({ className: 'incident-marker', html: '<div class="w-7 h-7 rounded-full bg-amber-500 border-2 border-white flex items-center justify-center text-white text-xs shadow-lg animate-bounce">⚠️</div>', iconSize: [28, 28], iconAnchor: [14, 14] })
+        });
+        marker.bindPopup(`<div class="p-2 text-slate-800 font-sans"><span class="text-[10px] font-bold text-amber-600 uppercase">Citizen Hazard Report</span><h4 class="font-bold text-sm">${incident.hazardType}</h4><p class="text-xs text-slate-600">${incident.description}</p></div>`);
+        this.layers.citizenIncidents.addLayer(marker);
+        marker.openPopup();
+      }
+
+      toggleLayer(name, visible) {
+        if (!this.layers[name]) return;
+        if (visible) {
+          if (!this.map.hasLayer(this.layers[name])) this.map.addLayer(this.layers[name]);
+        } else {
+          if (this.map.hasLayer(this.layers[name])) this.map.removeLayer(this.layers[name]);
+        }
+      }
+    }
+
+    /* ==========================================================================
+       5. CHART.JS ANALYTICS MANAGER
+       ========================================================================== */
+    class AtmosCharts {
+      constructor() {
+        this.hourlyChart = null;
+        this.forecastChart = null;
+        this.sourcesChart = null;
+        this.abatementChart = null;
+      }
+
+      renderHourly(canvasId, data) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return;
+        if (this.hourlyChart) this.hourlyChart.destroy();
+        this.hourlyChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: data.map(d => d.hour),
+            datasets: [
+              { label: 'AQI Index', data: data.map(d => d.aqi), borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.12)', fill: true, tension: 0.4 },
+              { label: 'PM2.5 (µg/m³)', data: data.map(d => d.pm25), borderColor: '#ef4444', borderDash: [4, 4], tension: 0.4 }
+            ]
+          },
+          options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#f59e0b' } } } }
+        });
+      }
+
+      renderForecast(canvasId, data) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return;
+        if (this.forecastChart) this.forecastChart.destroy();
+        this.forecastChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: data.map(d => d.day),
+            datasets: [{ label: 'Projected AQI', data: data.map(d => d.aqi), backgroundColor: data.map(d => d.aqi > 200 ? 'rgba(239, 68, 68, 0.8)' : d.aqi > 100 ? 'rgba(249, 115, 22, 0.8)' : 'rgba(16, 185, 129, 0.8)'), borderRadius: 6 }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } } }
+        });
+      }
+
+      renderSources(canvasId, data) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return;
+        if (this.sourcesChart) this.sourcesChart.destroy();
+        this.sourcesChart = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: data.map(s => s.name),
+            datasets: [{ data: data.map(s => s.percentage), backgroundColor: data.map(s => s.color), borderColor: '#0f172a', borderWidth: 2 }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } } } }
+        });
+      }
+
+      renderAbatement(canvasId, baseAqi, simAqi) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return;
+        if (this.abatementChart) this.abatementChart.destroy();
+        this.abatementChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['Status Quo', 'With Interventions'],
+            datasets: [{ label: 'AQI Level', data: [baseAqi, simAqi], backgroundColor: ['#ef4444', '#10b981'], borderRadius: 6, barThickness: 38 }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } } }
+        });
+      }
+    }
+
+    /* ==========================================================================
+       6. MAIN APPLICATION BOOTSTRAP
+       ========================================================================== */
+    document.addEventListener('DOMContentLoaded', () => {
+      let currentCityId = "delhi";
+      let currentCity = CITIES_DATA.delhi;
+      let selectedCandidateIds = [];
+      let activeInterventions = ["lez", "scrubbers", "green_belts"];
+      let scaleMultiplier = 1.0;
+
+      const map = new AtmosMap('mapContainer');
+      const charts = new AtmosCharts();
+
+      // UI Element bindings
+      const citySelect = document.getElementById('citySelect');
+      const searchInput = document.getElementById('citySearchInput');
+      const btnModeCitizen = document.getElementById('btnModeCitizen');
+      const btnModeExpert = document.getElementById('btnModeExpert');
+      const btnModeCitizenMob = document.getElementById('btnModeCitizenMob');
+      const btnModeExpertMob = document.getElementById('btnModeExpertMob');
+      const citizenSection = document.getElementById('citizenViewSection');
+      const expertSection = document.getElementById('expertViewSection');
+
+      // Populate City Selector
+      citySelect.innerHTML = Object.values(CITIES_DATA).map(c => `
+        <option value="${c.id}" ${c.id === currentCityId ? 'selected' : ''}>${c.name}, ${c.country} (AQI ${c.aqi})</option>
+      `).join('');
+
+      citySelect.addEventListener('change', (e) => loadCity(e.target.value));
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          const q = e.target.value.toLowerCase().trim();
+          if (!q) return;
+          const match = Object.values(CITIES_DATA).find(c => c.name.toLowerCase().includes(q) || c.country.toLowerCase().includes(q));
+          if (match && match.id !== currentCityId) {
+            citySelect.value = match.id;
+            loadCity(match.id);
+          }
+        });
+      }
+
+      // Mode Toggling
+      function setMode(mode) {
+        if (mode === 'citizen') {
+          btnModeCitizen.classList.add('bg-emerald-600', 'text-white');
+          btnModeCitizen.classList.remove('text-slate-400');
+          btnModeExpert.classList.remove('bg-indigo-600', 'text-white');
+          btnModeExpert.classList.add('text-slate-400');
+          citizenSection.classList.remove('hidden');
+          expertSection.classList.add('hidden');
+        } else {
+          btnModeExpert.classList.add('bg-indigo-600', 'text-white');
+          btnModeExpert.classList.remove('text-slate-400');
+          btnModeCitizen.classList.remove('bg-emerald-600', 'text-white');
+          btnModeCitizen.classList.add('text-slate-400');
+          citizenSection.classList.add('hidden');
+          expertSection.classList.remove('hidden');
+          charts.renderSources('sourcesChart', currentCity.sources);
+        }
+      }
+
+      btnModeCitizen.addEventListener('click', () => setMode('citizen'));
+      btnModeExpert.addEventListener('click', () => setMode('expert'));
+      if (btnModeCitizenMob) btnModeCitizenMob.addEventListener('click', () => setMode('citizen'));
+      if (btnModeExpertMob) btnModeExpertMob.addEventListener('click', () => setMode('expert'));
+
+      // Layer Checkboxes
+      ['Heatmap', 'Sensors', 'Plumes', 'Candidates', 'Routes'].forEach(name => {
+        const el = document.getElementById(`toggle${name}`);
+        if (el) el.addEventListener('change', (e) => map.toggleLayer(name.toLowerCase(), e.target.checked));
+      });
+
+      // Citizen Hazard Reporting
+      const reportModal = document.getElementById('reportModal');
+      document.getElementById('btnOpenReportModal').addEventListener('click', () => reportModal.classList.remove('hidden'));
+      document.getElementById('btnCloseReportModal').addEventListener('click', () => reportModal.classList.add('hidden'));
+      document.getElementById('citizenReportForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const type = document.getElementById('hazardTypeSelect').value;
+        const desc = document.getElementById('hazardDescInput').value;
+        const lat = currentCity.coords[0] + (Math.random() - 0.5) * 0.03;
+        const lng = currentCity.coords[1] + (Math.random() - 0.5) * 0.03;
+        map.addCitizenIncident({ hazardType: type, description: desc, lat, lng });
+        reportModal.classList.add('hidden');
+        e.target.reset();
+        showToast('Hazard reported & spatial coordinates recorded!');
+      });
+
+      // Export Action Plan
+      document.getElementById('btnExportReport').addEventListener('click', () => {
+        const report = { platform: "AtmosOptima", city: currentCity.name, country: currentCity.country, aqi: currentCity.aqi, pollutants: currentCity.pollutants, sources: currentCity.sources, candidateSiting: selectedCandidateIds, exportedAt: new Date().toISOString() };
+        const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Clean_Air_Action_Plan_${currentCity.id}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast(`Clean Air Action Plan exported for ${currentCity.name}!`);
+      });
+
+      function showToast(msg) {
+        const t = document.createElement('div');
+        t.className = "fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl border border-emerald-500/40 shadow-2xl flex items-center gap-2 animate-fade-in text-xs";
+        t.innerHTML = `<span class="text-emerald-400 font-bold">✓</span><span>${msg}</span>`;
+        document.body.appendChild(t);
+        setTimeout(() => { t.remove(); }, 3000);
+      }
+
+      // Load City State
+      function loadCity(id) {
+        currentCityId = id;
+        currentCity = CITIES_DATA[id];
+        if (!currentCity) return;
+
+        const cat = getAqiCategory(currentCity.aqi);
+
+        // Update Hero Stats
+        document.getElementById('cityHeroTitle').textContent = `${currentCity.name}, ${currentCity.country}`;
+        document.getElementById('heroAqiNumber').textContent = currentCity.aqi;
+        document.getElementById('heroAqiNumber').style.color = cat.color;
+        const badge = document.getElementById('heroAqiBadge');
+        badge.textContent = cat.label;
+        badge.style.backgroundColor = `${cat.color}25`;
+        badge.style.color = cat.color;
+        badge.style.borderColor = `${cat.color}50`;
+        document.getElementById('heroAqiDesc').textContent = cat.description;
+        document.getElementById('heroDominantPollutant').textContent = `Dominant: ${currentCity.dominantPollutant}`;
+
+        // Micro-Weather
+        if (currentCity.weather) {
+          document.getElementById('weatherTemp').textContent = `${currentCity.weather.temp}°C`;
+          document.getElementById('weatherHumidity').textContent = `${currentCity.weather.humidity}%`;
+          document.getElementById('weatherWind').textContent = `${currentCity.weather.windSpeed} km/h ${currentCity.weather.windDirectionText}`;
+          document.getElementById('weatherInversion').textContent = `${currentCity.weather.inversionRisk} Risk`;
+        }
+
+        // Pollutant Cards
+        const pGrid = document.getElementById('pollutantsGridContainer');
+        const pols = [
+          { name: 'PM2.5', label: 'Fine Particulates', val: currentCity.pollutants.pm25, unit: 'µg/m³', key: 'pm25' },
+          { name: 'PM10', label: 'Coarse Dust', val: currentCity.pollutants.pm10, unit: 'µg/m³', key: 'pm10' },
+          { name: 'NO₂', label: 'Nitrogen Dioxide', val: currentCity.pollutants.no2, unit: 'µg/m³', key: 'no2' },
+          { name: 'SO₂', label: 'Sulfur Dioxide', val: currentCity.pollutants.so2, unit: 'µg/m³', key: 'so2' },
+          { name: 'CO', label: 'Carbon Monoxide', val: currentCity.pollutants.co, unit: 'mg/m³', key: 'co' },
+          { name: 'O₃', label: 'Surface Ozone', val: currentCity.pollutants.o3, unit: 'µg/m³', key: 'o3' }
+        ];
+
+        pGrid.innerHTML = pols.map(p => {
+          const comp = getWhoComparison(p.key, p.val);
+          return `
+            <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="font-mono font-bold text-sm text-slate-100">${p.name}</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded ${comp?.isExceeded ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}">${comp ? comp.text : 'Verified'}</span>
+                </div>
+                <div class="text-[10px] text-slate-400 truncate">${p.label}</div>
+              </div>
+              <div class="flex items-baseline justify-between pt-1 border-t border-slate-800/60 mt-2">
+                <span class="text-xl font-mono font-extrabold text-slate-100">${p.val}</span>
+                <span class="text-xs text-slate-500 font-mono">${p.unit}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Citizen Advisories
+        const adv = getHealthAdvisories(currentCity.aqi);
+        document.getElementById('citizenAdvisoriesContainer').innerHTML = `
+          <div class="p-4 rounded-xl border ${cat.border} ${cat.bg} mb-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider ${cat.text}">● Citizen Health Advisory</span>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-900/40 text-slate-200 border border-slate-700">EPA AQI ${Math.round(currentCity.aqi)} - ${cat.label}</span>
+            </div>
+            <h3 class="text-lg font-bold text-slate-100 mb-1">${adv.status}</h3>
+            <p class="text-sm text-slate-300">${adv.general}</p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800"><div class="flex items-center gap-2 mb-1"><span class="text-lg">👶👵</span><h4 class="text-xs font-bold text-amber-400 uppercase">Sensitive Groups</h4></div><p class="text-xs text-slate-300">${adv.sensitive}</p></div>
+            <div class="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800"><div class="flex items-center gap-2 mb-1"><span class="text-lg">🏃🚴</span><h4 class="text-xs font-bold text-emerald-400 uppercase">Athletes & Commuters</h4></div><p class="text-xs text-slate-300">${adv.athletes}</p></div>
+            <div class="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800"><div class="flex items-center gap-2 mb-1"><span class="text-lg">🏠💨</span><h4 class="text-xs font-bold text-cyan-400 uppercase">Indoor Air</h4></div><p class="text-xs text-slate-300">${adv.indoor}</p></div>
+            <div class="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800"><div class="flex items-center gap-2 mb-1"><span class="text-lg">😷🛡️</span><h4 class="text-xs font-bold text-violet-400 uppercase">PPE Masks</h4></div><p class="text-xs text-slate-300">${adv.maskRecommendation}</p></div>
+          </div>
+        `;
+
+        // Clean Route
+        const crContainer = document.getElementById('cleanRouteContainer');
+        if (currentCity.cleanRoutes && currentCity.cleanRoutes.length > 0) {
+          const r = currentCity.cleanRoutes[0];
+          crContainer.innerHTML = `
+            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-emerald-400 font-bold text-sm">🌿 Clean Air Navigator</span>
+                <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold rounded-full border border-emerald-500/20">${r.exposureReductionPct}% Less Toxic Particulate</span>
+              </div>
+              <div class="space-y-2 text-xs">
+                <div class="p-2.5 rounded-lg bg-rose-950/20 border border-rose-800/40 flex justify-between"><span>🚗 Standard Corridor (AQI ${r.standardExposureAQI})</span><strong class="text-rose-400">Direct Route</strong></div>
+                <div class="p-2.5 rounded-lg bg-emerald-950/20 border border-emerald-800/40 flex justify-between"><span>🚲 Green Pathway (AQI ${r.cleanExposureAQI})</span><strong class="text-emerald-400">Clean Corridor</strong></div>
+                <div class="text-[11px] text-slate-400">${r.distanceDeltaKm}</div>
+              </div>
+            </div>
+          `;
+        } else {
+          crContainer.innerHTML = `<div class="p-4 rounded-xl bg-slate-900/50 border border-slate-800 text-xs text-slate-400 text-center">Interactive route layer active on map.</div>`;
+        }
+
+        // Render Siting Optimizer UI
+        renderSensorOptimizer(currentCity);
+
+        // Render Abatement Simulator UI
+        renderAbatementPlanner(currentCity);
+
+        // Map & Charts
+        map.loadCity(currentCity, selectedCandidateIds);
+        charts.renderHourly('hourlyChart', currentCity.hourlyHistory || []);
+        charts.renderForecast('forecastChart', currentCity.forecast7Day || []);
+      }
+
+      function renderSensorOptimizer(city) {
+        const container = document.getElementById('sensorOptimizerContainer');
+        container.innerHTML = `
+          <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+              <h3 class="text-base font-bold text-slate-100 flex items-center gap-2"><span>📡</span> Sensor Siting Optimization (MCLP Solver)</h3>
+              <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">MCLP Engine</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-800">
+                <div class="flex justify-between text-xs mb-1"><span class="text-slate-300">Deployment Budget</span><strong id="budgetDisplay" class="text-emerald-400 font-mono">$60,000</strong></div>
+                <input type="range" id="optBudgetSlider" min="15000" max="150000" step="5000" value="60000" class="w-full accent-emerald-500 cursor-pointer h-1.5 bg-slate-700 rounded-lg">
+              </div>
+              <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-800">
+                <label class="block text-xs text-slate-300 mb-1">Hardware Tier Strategy</label>
+                <select id="optStationSelect" class="w-full text-xs bg-slate-900 border border-slate-700 text-slate-200 rounded-lg p-2">
+                  <option value="mixed" selected>Hybrid (Ref. Anchors + IoT Grid)</option>
+                  <option value="iot">IoT Micro-Sensors Only ($4.5k/ea)</option>
+                  <option value="reference">Reference Grade CAAQMS ($25k/ea)</option>
+                </select>
+              </div>
+              <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-800">
+                <label class="block text-xs text-slate-300 mb-1">Optimization Objective</label>
+                <select id="optPrioritySelect" class="w-full text-xs bg-slate-900 border border-slate-700 text-slate-200 rounded-lg p-2">
+                  <option value="balanced" selected>Balanced Exposure & Risk</option>
+                  <option value="vulnerability">Max Vulnerability (Schools/Hospitals)</option>
+                  <option value="population">Max Population Exposure</option>
+                </select>
+              </div>
+            </div>
+            <button id="btnRunOptimizer" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-semibold text-xs mb-4">⚡ Execute Mathematical Siting Solver</button>
+            <div id="optimizerScorecard"></div>
+          </div>
+        `;
+
+        const bSlider = document.getElementById('optBudgetSlider');
+        const bDisplay = document.getElementById('budgetDisplay');
+        bSlider.addEventListener('input', (e) => bDisplay.textContent = `$${parseInt(e.target.value).toLocaleString()}`);
+        document.getElementById('btnRunOptimizer').addEventListener('click', () => runOptimizer(city));
+        runOptimizer(city);
+      }
+
+      function runOptimizer(city) {
+        const budget = parseInt(document.getElementById('optBudgetSlider')?.value || 60000);
+        const type = document.getElementById('optStationSelect')?.value || 'mixed';
+        const res = solveOptimalSensorSiting(city, { budgetUSD: budget, stationType: type });
+        selectedCandidateIds = res.selectedSites.map(s => s.id);
+        map.renderCandidateGrid(city, selectedCandidateIds);
+
+        document.getElementById('optimizerScorecard').innerHTML = `
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+            <div class="p-3 rounded-xl bg-slate-800/60 text-center"><div class="text-[10px] text-slate-400">Pop. Coverage</div><div class="text-xl font-bold text-emerald-400">${res.finalCoveragePct}%</div></div>
+            <div class="p-3 rounded-xl bg-slate-800/60 text-center"><div class="text-[10px] text-slate-400">Hotspot Latency</div><div class="text-xl font-bold text-indigo-400">${res.detectionLatencyMin} min</div></div>
+            <div class="p-3 rounded-xl bg-slate-800/60 text-center"><div class="text-[10px] text-slate-400">Allocated Budget</div><div class="text-xl font-bold text-slate-200">$${res.totalSpentUSD.toLocaleString()}</div></div>
+            <div class="p-3 rounded-xl bg-slate-800/60 text-center"><div class="text-[10px] text-slate-400">Optimality Score</div><div class="text-xl font-bold text-teal-400">${res.optimalityScore}/100</div></div>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-800/40 border border-slate-800 text-xs">
+            <span class="text-emerald-400 font-bold">📍 ${res.selectedSites.length} Candidate Stations Mathematically Sited:</span>
+            <div class="divide-y divide-slate-800 mt-2">${res.selectedSites.map(s => `
+              <div class="py-1.5 flex justify-between text-[11px]">
+                <span><strong>#${s.rank}</strong> ${s.name} (${s.assignedType === 'reference' ? '🏛️ CAAQMS' : '📡 IoT Micro'})</span>
+                <strong class="text-emerald-400 font-mono">$${s.assignedCost.toLocaleString()}</strong>
+              </div>
+            `).join('')}</div>
+          </div>
+        `;
+      }
+
+      function renderAbatementPlanner(city) {
+        const container = document.getElementById('abatementPlannerContainer');
+        container.innerHTML = `
+          <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+              <h3 class="text-base font-bold text-slate-100 flex items-center gap-2"><span>🛡️</span> Clean Air Action & Abatement Siting Sandbox</h3>
+              <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20">Policy ROI</span>
+            </div>
+            <div class="bg-slate-800/40 p-3 rounded-xl border border-slate-800 mb-4">
+              <div class="flex justify-between text-xs mb-1"><span class="text-slate-300">Policy Rollout Scale</span><strong id="scaleDisplay" class="text-teal-400 font-mono">100% (Citywide)</strong></div>
+              <input type="range" id="abScaleSlider" min="0.25" max="1.5" step="0.25" value="1.0" class="w-full accent-teal-500 cursor-pointer h-1.5 bg-slate-700 rounded-lg">
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 mb-4">
+              ${AVAILABLE_INTERVENTIONS.map(i => `
+                <label class="flex items-start gap-2.5 p-2.5 rounded-xl border border-slate-800 bg-slate-800/30 cursor-pointer text-xs">
+                  <input type="checkbox" class="ab-cb mt-1 accent-teal-500" value="${i.id}" ${activeInterventions.includes(i.id) ? 'checked' : ''}>
+                  <div><div class="flex justify-between font-bold text-slate-200"><span>${i.name}</span><span class="text-teal-400 font-mono">$${(i.costPerYearUSD/1000000).toFixed(1)}M/yr</span></div><p class="text-[11px] text-slate-400 mt-0.5">${i.description}</p></div>
+                </label>
+              `).join('')}
+            </div>
+            <div id="abatementMetrics"></div>
+          </div>
+        `;
+
+        const sSlider = document.getElementById('abScaleSlider');
+        const sDisplay = document.getElementById('scaleDisplay');
+        sSlider.addEventListener('input', (e) => {
+          scaleMultiplier = parseFloat(e.target.value);
+          sDisplay.textContent = `${Math.round(scaleMultiplier * 100)}% (${scaleMultiplier < 1 ? 'Phased Pilot' : scaleMultiplier === 1 ? 'Citywide' : 'Aggressive'})`;
+          runAbatement(city);
+        });
+
+        document.querySelectorAll('.ab-cb').forEach(cb => {
+          cb.addEventListener('change', () => {
+            activeInterventions = Array.from(document.querySelectorAll('.ab-cb:checked')).map(c => c.value);
+            runAbatement(city);
+          });
+        });
+
+        runAbatement(city);
+      }
+
+      function runAbatement(city) {
+        const res = simulateAbatementImpact(city, activeInterventions, scaleMultiplier);
+        charts.renderAbatement('abatementComparisonChart', city.aqi, res.simulatedAqi);
+        document.getElementById('abatementMetrics').innerHTML = `
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="p-3 rounded-xl bg-slate-800/60 text-center"><div class="text-[10px] text-slate-400">Simulated AQI</div><div class="text-2xl font-black text-emerald-400">${res.simulatedAqi}</div><div class="text-[10px] text-emerald-500 font-mono">-${res.aqiDelta} AQI drop</div></div>
+            <div class="p-3 rounded-xl bg-slate-800/60 text-center"><div class="text-[10px] text-slate-400">Health Relief</div><div class="text-xl font-bold text-indigo-400">${res.avoidedHospitalizations.toLocaleString()}</div><div class="text-[10px] text-slate-400">ER visits avoided/yr</div></div>
+            <div class="p-3 rounded-xl bg-slate-800/60 text-center"><div class="text-[10px] text-slate-400">Health Savings</div><div class="text-xl font-bold text-teal-400">$${(res.economicSavingsUSD/1000000).toFixed(1)}M</div><div class="text-[10px] text-slate-400">Societal savings</div></div>
+            <div class="p-3 rounded-xl bg-slate-800/60 text-center"><div class="text-[10px] text-slate-400">Policy ROI (BCR)</div><div class="text-xl font-bold text-amber-400">${res.benefitCostRatio}x</div><div class="text-[10px] text-slate-400">Cost: $${(res.totalAnnualCostUSD/1000000).toFixed(1)}M</div></div>
+          </div>
+        `;
+      }
+
+      // Initial Load
+      loadCity(currentCityId);
+    });
+  </script>
 </body>
 </html>
